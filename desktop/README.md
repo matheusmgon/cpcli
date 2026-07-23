@@ -40,12 +40,18 @@ Vite/React/Svelte depois; basta apontar o `frontend:*` do `wails.json` e o
 
 ## Build & run
 
+Distros modernas (Fedora 40+, etc.) só têm **webkit2gtk-4.1**; o Wails procura a
+4.0 por padrão. Passe a build tag `webkit2_41` para usar a 4.1:
+
 ```sh
 cd desktop
-go mod tidy        # resolve/pina a versão do Wails e o replace do core
-wails dev          # hot-reload durante o desenvolvimento
-wails build        # binário de produção em build/bin/
+go mod tidy                    # resolve/pina a versão do Wails e o replace do core
+wails dev -tags webkit2_41     # hot-reload; serve também em http://localhost:34115
+wails build -tags webkit2_41   # binário de produção em build/bin/
 ```
+
+Em sistemas que ainda tenham a webkit2gtk-4.0, a tag é dispensável
+(`wails dev` / `wails build`).
 
 ## Estado
 
