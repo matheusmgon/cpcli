@@ -237,7 +237,7 @@ func (s *Service) DeleteObject(kind, name string) error {
 
 // ListAccessLayers returns the Access Control layers.
 func (s *Service) ListAccessLayers() ([]map[string]interface{}, error) {
-	return s.listSimple("show-access-layers", "objects", map[string]interface{}{})
+	return s.listSimple("show-access-layers", "access-layers", map[string]interface{}{})
 }
 
 // ListAccessRulebase returns the rules of one Access Control layer.

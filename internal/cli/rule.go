@@ -158,7 +158,7 @@ func newLayerListCmd() *cobra.Command {
 		Use:   "layers",
 		Short: "Lista as camadas (access layers) de Access Control disponíveis",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return listAndPrint("show-access-layers", detailsLevel, "objects", map[string]interface{}{})
+			return listAndPrint("show-access-layers", detailsLevel, "access-layers", map[string]interface{}{})
 		},
 	}
 	cmd.Flags().StringVar(&detailsLevel, "details-level", "standard", "Nível de detalhe: uid | standard | full")
