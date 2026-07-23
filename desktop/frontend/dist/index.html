@@ -1,149 +1,166 @@
 <!doctype html>
-<html lang="pt-br">
+<html lang="pt-br" data-theme="dark">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>cpcli desktop</title>
     <style>
-      :root {
+      /* ---- Themes ---------------------------------------------------- */
+      [data-theme="dark"] {
         --bg: #0f1117;
+        --sidebar: #12141c;
         --surface: #171a22;
         --surface-2: #1e222c;
         --border: #2a2f3a;
         --text: #e6e8ee;
         --muted: #8b93a4;
-        --accent: #e2452a; /* Check Point red */
+        --row-hover: #1b1f28;
+        --shadow: 0 20px 50px -25px #000;
+      }
+      [data-theme="light"] {
+        --bg: #f4f6f9;
+        --sidebar: #1f2430;
+        --surface: #ffffff;
+        --surface-2: #eef1f6;
+        --border: #dde2ea;
+        --text: #1b1f27;
+        --muted: #6b7482;
+        --row-hover: #f0f3f8;
+        --shadow: 0 18px 44px -28px #0007;
+      }
+      :root {
+        --accent: #e2452a;
         --accent-soft: #e2452a22;
         --ok: #3fb950;
         --danger: #f85149;
-        --radius: 10px;
       }
+      /* sidebar keeps a dark identity in both themes (Portainer-like) */
+      [data-theme="light"] .sidebar { --text: #e6e8ee; --muted: #9aa3b2; }
+
       * { box-sizing: border-box; }
       html, body { margin: 0; height: 100%; }
       body {
         background: var(--bg);
         color: var(--text);
         font: 14px/1.5 -apple-system, "Segoe UI", Roboto, Ubuntu, sans-serif;
-        -webkit-user-select: none;
-        user-select: none;
+        -webkit-user-select: none; user-select: none;
       }
       button {
-        font: inherit;
-        color: var(--text);
-        background: var(--surface-2);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 8px 14px;
-        cursor: pointer;
-        transition: background 120ms ease, border-color 120ms ease;
+        font: inherit; color: var(--text); background: var(--surface-2);
+        border: 1px solid var(--border); border-radius: 8px; padding: 8px 13px;
+        cursor: pointer; transition: background 120ms, border-color 120ms, filter 120ms;
       }
-      button:hover { background: #262b36; }
+      button:hover { filter: brightness(1.06); }
       button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
-      button.primary:hover { filter: brightness(1.08); }
       button.ghost { background: transparent; }
+      button.sm { padding: 5px 10px; font-size: 12px; }
       button:disabled { opacity: .5; cursor: default; }
       input, select {
-        font: inherit;
-        color: var(--text);
-        background: var(--bg);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 9px 11px;
-        width: 100%;
+        font: inherit; color: var(--text); background: var(--bg);
+        border: 1px solid var(--border); border-radius: 8px; padding: 9px 11px; width: 100%;
       }
+      [data-theme="light"] input, [data-theme="light"] select { background: #fff; }
       input:focus, select:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
       label { display: block; font-size: 12px; color: var(--muted); margin: 0 0 5px; }
       .hidden { display: none !important; }
 
-      /* Login */
-      #login {
-        height: 100vh;
-        display: grid;
-        place-items: center;
-      }
+      /* ---- Login ----------------------------------------------------- */
+      #login { height: 100vh; display: grid; place-items: center; }
       .card {
-        width: 380px;
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        padding: 30px;
-        box-shadow: 0 24px 60px -30px #000;
+        width: 380px; background: var(--surface); border: 1px solid var(--border);
+        border-radius: 16px; padding: 30px; box-shadow: var(--shadow);
       }
       .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
       .brand .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 16px var(--accent); }
-      .brand h1 { font-size: 17px; margin: 0; letter-spacing: .2px; }
+      .brand h1 { font-size: 17px; margin: 0; }
       .brand span { color: var(--muted); font-size: 12px; }
       .field { margin-bottom: 14px; }
       .row { display: flex; gap: 12px; }
       .check { display: flex; align-items: center; gap: 8px; color: var(--muted); }
       .check input { width: auto; }
 
-      /* Console */
-      #console { height: 100vh; display: grid; grid-template-rows: auto 1fr; }
-      header.bar {
-        display: flex; align-items: center; gap: 14px;
-        padding: 12px 18px; border-bottom: 1px solid var(--border); background: var(--surface);
+      /* ---- App shell (Portainer-like) -------------------------------- */
+      #app { height: 100vh; display: grid; grid-template-columns: 232px 1fr; }
+      .sidebar {
+        background: var(--sidebar); color: var(--text);
+        display: flex; flex-direction: column; border-right: 1px solid #000a;
       }
-      header.bar .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--ok); }
-      header.bar .who { font-size: 13px; }
-      header.bar .who b { color: var(--text); }
-      header.bar .who span { color: var(--muted); }
-      header.bar .spacer { flex: 1; }
-      main { padding: 18px; overflow: auto; }
-      .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+      .sidebar .head { padding: 18px 18px 14px; display: flex; align-items: center; gap: 10px; }
+      .sidebar .head .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 14px var(--accent); }
+      .sidebar .head b { font-size: 15px; }
+      .nav { flex: 1; overflow-y: auto; padding: 6px 0 16px; }
+      .nav .grp { color: var(--muted); font-size: 11px; letter-spacing: .8px; text-transform: uppercase; padding: 14px 18px 6px; }
+      .nav a {
+        display: flex; align-items: center; gap: 10px; padding: 9px 18px; cursor: pointer;
+        color: var(--text); opacity: .82; border-left: 3px solid transparent; font-size: 13.5px;
+      }
+      .nav a:hover { opacity: 1; background: #ffffff0a; }
+      .nav a.active { opacity: 1; background: #ffffff10; border-left-color: var(--accent); font-weight: 600; }
+      .nav a .ic { width: 16px; text-align: center; opacity: .8; }
+      .sidebar .foot { padding: 12px 14px; border-top: 1px solid #ffffff12; display: flex; gap: 8px; }
+      .sidebar .foot button { flex: 1; }
+
+      .main { display: grid; grid-template-rows: auto 1fr; min-width: 0; }
+      .topbar {
+        display: flex; align-items: center; gap: 14px; padding: 12px 20px;
+        border-bottom: 1px solid var(--border); background: var(--surface);
+      }
+      .topbar .conn { display: flex; align-items: center; gap: 9px; font-size: 13px; }
+      .topbar .conn .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--ok); }
+      .topbar .conn b { color: var(--text); }
+      .topbar .conn span { color: var(--muted); }
+      .topbar .spacer { flex: 1; }
+      .pending { color: var(--accent); font-size: 12px; font-weight: 600; }
+
+      .content { padding: 22px 24px; overflow: auto; }
+      .content h2 { margin: 0 0 4px; font-size: 20px; }
+      .content .sub { color: var(--muted); font-size: 13px; margin: 0 0 18px; }
+      .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); }
+      .panel + .panel { margin-top: 16px; }
+      .panel .ph { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; gap: 10px; align-items: center; }
+      .panel .ph .t { font-weight: 600; font-size: 13px; }
+      .panel .pb { padding: 14px 16px; }
+      .toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
       .toolbar .search { flex: 1; min-width: 200px; }
-      .pending { color: var(--accent); font-size: 12px; }
+      .addbar { display: flex; gap: 10px; flex-wrap: wrap; }
+      .addbar input { flex: 1; min-width: 140px; }
 
       table { width: 100%; border-collapse: collapse; }
-      th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
-      th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
-      tbody tr:hover { background: var(--surface); }
-      td.actions { text-align: right; }
-      .empty { color: var(--muted); padding: 30px; text-align: center; }
+      th, td { text-align: left; padding: 10px 16px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+      th { color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
+      tbody tr:hover { background: var(--row-hover); }
+      td.actions { text-align: right; white-space: nowrap; }
+      tr.section td { background: var(--surface-2); font-weight: 600; color: var(--muted); }
+      .empty { color: var(--muted); padding: 28px; text-align: center; }
+      .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+      .chip { background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 5px 9px; font-size: 12px; display: flex; gap: 6px; align-items: center; }
+      .chip input { width: auto; }
 
       .toast {
-        position: fixed; right: 18px; bottom: 18px; max-width: 420px;
-        background: var(--surface-2); border: 1px solid var(--border);
-        border-left: 3px solid var(--danger); border-radius: 8px;
-        padding: 12px 14px; white-space: pre-wrap; font-size: 13px;
-        box-shadow: 0 20px 50px -25px #000;
+        position: fixed; right: 18px; bottom: 18px; max-width: 460px; z-index: 50;
+        background: var(--surface-2); border: 1px solid var(--border); border-left: 3px solid var(--danger);
+        border-radius: 8px; padding: 12px 14px; white-space: pre-wrap; font-size: 13px; box-shadow: var(--shadow);
       }
       .toast.ok { border-left-color: var(--ok); }
-
-      /* Add-host inline form */
-      .addbar { display: flex; gap: 10px; margin-bottom: 14px; }
-      .addbar input { flex: 1; }
+      .icon-btn { background: transparent; border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; }
     </style>
   </head>
   <body>
-    <!-- ===== LOGIN ===== -->
+    <!-- ===================== LOGIN ===================== -->
     <section id="login">
       <div class="card">
         <div class="brand">
           <div class="dot"></div>
-          <div>
-            <h1>cpcli desktop</h1>
-            <span>Check Point Management</span>
-          </div>
+          <div><h1>cpcli desktop</h1><span>Check Point Management</span></div>
+          <div style="flex:1"></div>
+          <button id="theme-login" class="icon-btn" title="Alternar tema">🌗</button>
         </div>
-        <div class="field">
-          <label>Servidor</label>
-          <input id="in-server" placeholder="192.168.56.10" />
-        </div>
+        <div class="field"><label>Servidor</label><input id="in-server" placeholder="192.168.56.10" /></div>
         <div class="row">
-          <div class="field" style="flex:2">
-            <label>Usuário</label>
-            <input id="in-user" placeholder="admin" />
-          </div>
-          <div class="field" style="flex:1">
-            <label>Porta</label>
-            <input id="in-port" placeholder="443" />
-          </div>
+          <div class="field" style="flex:2"><label>Usuário</label><input id="in-user" placeholder="admin" /></div>
+          <div class="field" style="flex:1"><label>Porta</label><input id="in-port" placeholder="443" /></div>
         </div>
-        <div class="field">
-          <label>Senha</label>
-          <input id="in-pass" type="password" placeholder="••••••••" />
-        </div>
+        <div class="field"><label>Senha</label><input id="in-pass" type="password" placeholder="••••••••" /></div>
         <div class="field check">
           <input id="in-insecure" type="checkbox" />
           <label for="in-insecure" style="margin:0">Ignorar verificação de certificado TLS (só em lab)</label>
@@ -152,71 +169,368 @@
       </div>
     </section>
 
-    <!-- ===== CONSOLE ===== -->
-    <section id="console" class="hidden">
-      <header class="bar">
-        <div class="dot"></div>
-        <div class="who"><b id="who-server"></b> <span id="who-user"></span></div>
-        <div class="spacer"></div>
-        <span id="pending" class="pending"></span>
-        <button id="btn-publish" class="primary">Publish</button>
-        <button id="btn-discard" class="ghost">Discard</button>
-        <button id="btn-logout" class="ghost">Sair</button>
-      </header>
-      <main>
-        <div class="toolbar">
-          <input id="search" class="search" placeholder="Filtrar hosts…" />
-          <button id="btn-refresh">Atualizar</button>
+    <!-- ===================== APP ===================== -->
+    <section id="app" class="hidden">
+      <aside class="sidebar">
+        <div class="head"><div class="dot"></div><b>cpcli</b></div>
+        <nav class="nav" id="nav"></nav>
+        <div class="foot">
+          <button id="theme-app" class="ghost" title="Alternar tema">🌗 Tema</button>
         </div>
-        <div class="addbar">
-          <input id="add-name" placeholder="nome do host (ex: web-01)" />
-          <input id="add-ip" placeholder="ip (ex: 10.0.0.10)" />
-          <button id="btn-add" class="primary">Adicionar host</button>
+      </aside>
+      <div class="main">
+        <div class="topbar">
+          <div class="conn"><div class="dot"></div><b id="who-server"></b><span id="who-user"></span></div>
+          <div class="spacer"></div>
+          <span id="pending" class="pending"></span>
+          <button id="btn-publish" class="primary">Publish</button>
+          <button id="btn-discard" class="ghost">Discard</button>
+          <button id="btn-logout" class="ghost">Sair</button>
         </div>
-        <table>
-          <thead>
-            <tr><th>Nome</th><th>IPv4</th><th></th></tr>
-          </thead>
-          <tbody id="rows"></tbody>
-        </table>
-        <div id="empty" class="empty hidden">Nenhum host. Adicione o primeiro acima.</div>
-      </main>
+        <div class="content" id="content"></div>
+      </div>
     </section>
 
     <script>
-      // Bound Go facade (see main.go Bind): window.go.service.Service.*
       const api = () => window.go.service.Service;
       const $ = (id) => document.getElementById(id);
+      const el = (t, cls, txt) => { const e = document.createElement(t); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
 
-      let pendingChanges = 0;
+      let pending = 0;
+      let current = "host";
 
+      // ---- theme -------------------------------------------------------
+      function applyTheme(t) {
+        document.documentElement.setAttribute("data-theme", t);
+        try { localStorage.setItem("cpcli-theme", t); } catch (_) {}
+      }
+      function toggleTheme() {
+        const now = document.documentElement.getAttribute("data-theme");
+        applyTheme(now === "dark" ? "light" : "dark");
+      }
+      applyTheme((() => { try { return localStorage.getItem("cpcli-theme") || "dark"; } catch (_) { return "dark"; } })());
+
+      // ---- toast / helpers --------------------------------------------
       function toast(msg, ok = false) {
-        const prev = document.querySelector(".toast");
-        if (prev) prev.remove();
-        const el = document.createElement("div");
-        el.className = "toast" + (ok ? " ok" : "");
-        el.textContent = msg;
-        document.body.appendChild(el);
-        setTimeout(() => el.remove(), ok ? 2500 : 6000);
+        const prev = document.querySelector(".toast"); if (prev) prev.remove();
+        const e = el("div", "toast" + (ok ? " ok" : "")); e.textContent = msg;
+        document.body.appendChild(e); setTimeout(() => e.remove(), ok ? 2500 : 6500);
       }
-
-      function errText(e) {
-        return (e && e.message) ? e.message : String(e);
-      }
-
+      const errText = (e) => (e && e.message) ? e.message : String(e);
       function markPending(n) {
-        pendingChanges += n;
-        if (pendingChanges < 0) pendingChanges = 0;
-        $("pending").textContent = pendingChanges > 0 ? `${pendingChanges} mudança(s) pendente(s)` : "";
+        pending = Math.max(0, pending + n);
+        $("pending").textContent = pending > 0 ? `${pending} mudança(s) pendente(s)` : "";
+      }
+      function refName(v) {
+        if (v == null) return "";
+        if (typeof v === "string") return v;
+        if (Array.isArray(v)) return v.map(refName).filter(Boolean).join(", ");
+        if (typeof v === "object") return v.name || v.uid || "";
+        return String(v);
       }
 
+      // ---- navigation model -------------------------------------------
+      const NAV = [
+        { group: "Objetos", items: [
+          { id: "host", label: "Hosts", ic: "🖥" },
+          { id: "network", label: "Networks", ic: "🌐" },
+          { id: "group", label: "Groups", ic: "📦" },
+          { id: "service-tcp", label: "Services TCP", ic: "🔌" },
+          { id: "service-udp", label: "Services UDP", ic: "📡" },
+        ]},
+        { group: "Política", items: [
+          { id: "access", label: "Access Rules", ic: "🛡" },
+          { id: "nat", label: "NAT", ic: "🔀" },
+          { id: "install", label: "Instalar política", ic: "🚀" },
+        ]},
+        { group: "Infraestrutura", items: [
+          { id: "gateways", label: "Gateways", ic: "🧱" },
+          { id: "packages", label: "Packages", ic: "🗂" },
+        ]},
+      ];
+
+      const KIND_FIELDS = {
+        host: [{ k: "name", ph: "nome (ex: web-01)" }, { k: "ip-address", ph: "ip (ex: 10.0.0.10)" }],
+        network: [{ k: "name", ph: "nome (ex: lan)" }, { k: "subnet4", ph: "subnet (ex: 10.0.0.0)" }, { k: "mask-length4", ph: "máscara (ex: 24)" }],
+        group: [{ k: "name", ph: "nome do grupo" }],
+        "service-tcp": [{ k: "name", ph: "nome (ex: my-tcp)" }, { k: "port", ph: "porta (ex: 8080)" }],
+        "service-udp": [{ k: "name", ph: "nome (ex: my-udp)" }, { k: "port", ph: "porta (ex: 53)" }],
+      };
+      const KIND_COLS = {
+        host: [["Nome", (r) => r.name], ["IPv4", (r) => r["ipv4-address"] || r["ipv6-address"] || ""]],
+        network: [["Nome", (r) => r.name], ["Subnet", (r) => `${r.subnet4 || ""}${r["mask-length4"] != null ? " / " + r["mask-length4"] : ""}`]],
+        group: [["Nome", (r) => r.name], ["Membros", (r) => Array.isArray(r.members) ? r.members.length : ""]],
+        "service-tcp": [["Nome", (r) => r.name], ["Porta", (r) => r.port || ""]],
+        "service-udp": [["Nome", (r) => r.name], ["Porta", (r) => r.port || ""]],
+      };
+      const KIND_TITLE = { host: "Hosts", network: "Networks", group: "Groups", "service-tcp": "Services TCP", "service-udp": "Services UDP" };
+
+      function buildNav() {
+        const nav = $("nav"); nav.innerHTML = "";
+        for (const sec of NAV) {
+          nav.appendChild(el("div", "grp", sec.group));
+          for (const it of sec.items) {
+            const a = el("a"); a.dataset.id = it.id;
+            a.appendChild(Object.assign(el("span", "ic"), { textContent: it.ic }));
+            a.appendChild(el("span", null, it.label));
+            a.onclick = () => select(it.id);
+            nav.appendChild(a);
+          }
+        }
+      }
+      function select(id) {
+        current = id;
+        for (const a of document.querySelectorAll(".nav a")) a.classList.toggle("active", a.dataset.id === id);
+        render(id);
+      }
+
+      // ---- generic table ----------------------------------------------
+      function tableEl(headers) {
+        const table = el("table");
+        const thead = el("thead"); const tr = el("tr");
+        for (const h of headers) tr.appendChild(el("th", null, h));
+        thead.appendChild(tr); table.appendChild(thead);
+        const tbody = el("tbody"); table.appendChild(tbody);
+        return { table, tbody };
+      }
+      function panel(titleText, bodyNode, headerExtra) {
+        const p = el("div", "panel");
+        if (titleText || headerExtra) {
+          const ph = el("div", "ph"); ph.appendChild(el("span", "t", titleText || ""));
+          if (headerExtra) { const sp = el("div"); sp.style.flex = "1"; ph.appendChild(sp); ph.appendChild(headerExtra); }
+          p.appendChild(ph);
+        }
+        const pb = el("div", "pb"); pb.appendChild(bodyNode); p.appendChild(pb);
+        return p;
+      }
+
+      // ---- views -------------------------------------------------------
+      async function render(id) {
+        const c = $("content"); c.innerHTML = "";
+        if (KIND_FIELDS[id]) return renderObjects(id);
+        if (id === "access") return renderAccess();
+        if (id === "nat") return renderNat();
+        if (id === "install") return renderInstall();
+        if (id === "gateways") return renderReadTable("Gateways", () => api().ListGateways(),
+          [["Nome", (r) => r.name], ["Tipo", (r) => r.type || ""], ["IPv4", (r) => r["ipv4-address"] || ""]]);
+        if (id === "packages") return renderReadTable("Policy Packages", () => api().ListPackages(),
+          [["Nome", (r) => r.name], ["Access", (r) => (r["access"] ? "sim" : "")], ["Threat", (r) => (r["threat-prevention"] ? "sim" : "")]]);
+      }
+
+      function head(title, sub) {
+        const c = $("content");
+        c.appendChild(el("h2", null, title));
+        if (sub) c.appendChild(el("p", "sub", sub));
+      }
+
+      async function renderObjects(kind) {
+        head(KIND_TITLE[kind], "Alterações ficam pendentes até o Publish.");
+        const c = $("content");
+
+        // add form
+        const addWrap = el("div", "addbar");
+        const inputs = {};
+        for (const f of KIND_FIELDS[kind]) {
+          const i = el("input"); i.placeholder = f.ph; addWrap.appendChild(i); inputs[f.k] = i;
+        }
+        const addBtn = el("button", "primary", "Adicionar"); addWrap.appendChild(addBtn);
+        c.appendChild(panel("Novo " + kind, addWrap));
+
+        // toolbar + table
+        const search = el("input", "search"); search.placeholder = "Filtrar…";
+        const refreshBtn = el("button", null, "Atualizar");
+        const tb = el("div", "toolbar"); tb.appendChild(search); tb.appendChild(refreshBtn);
+
+        const cols = KIND_COLS[kind];
+        const { table, tbody } = tableEl([...cols.map((x) => x[0]), ""]);
+        const empty = el("div", "empty hidden", "Nenhum objeto. Adicione o primeiro acima.");
+        const box = el("div"); box.appendChild(tb); box.appendChild(table); box.appendChild(empty);
+        c.appendChild(panel(null, box));
+
+        async function reload() {
+          try {
+            const rows = (await api().ListObjects(kind, search.value.trim())) || [];
+            tbody.innerHTML = ""; empty.classList.toggle("hidden", rows.length > 0);
+            for (const r of rows) {
+              const tr = el("tr");
+              for (const [, get] of cols) tr.appendChild(el("td", null, String(get(r) ?? "")));
+              const td = el("td", "actions");
+              const del = el("button", "ghost sm", "Apagar");
+              del.onclick = () => removeObj(kind, r.name, reload);
+              td.appendChild(del); tr.appendChild(td); tbody.appendChild(tr);
+            }
+          } catch (e) { toast(errText(e)); }
+        }
+        addBtn.onclick = async () => {
+          const fields = {};
+          for (const f of KIND_FIELDS[kind]) { const v = inputs[f.k].value.trim(); if (v) fields[f.k] = v; }
+          if (!fields.name) { toast("Informe ao menos o nome."); return; }
+          try {
+            await api().AddObject(kind, fields);
+            for (const k in inputs) inputs[k].value = "";
+            markPending(1); toast("Criado (pendente de publish).", true); reload();
+          } catch (e) { toast(errText(e)); }
+        };
+        refreshBtn.onclick = reload;
+        search.addEventListener("keydown", (e) => { if (e.key === "Enter") reload(); });
+        reload();
+      }
+
+      async function removeObj(kind, name, reload) {
+        try { await api().DeleteObject(kind, name); markPending(1); toast(`"${name}" removido (pendente).`, true); reload(); }
+        catch (e) { toast(errText(e)); }
+      }
+
+      async function renderReadTable(title, fetch, cols) {
+        head(title, "Somente leitura.");
+        const c = $("content");
+        const { table, tbody } = tableEl(cols.map((x) => x[0]));
+        const empty = el("div", "empty hidden", "Nada encontrado.");
+        const box = el("div"); box.appendChild(table); box.appendChild(empty);
+        const refreshBtn = el("button", "sm", "Atualizar");
+        c.appendChild(panel(title, box, refreshBtn));
+        async function reload() {
+          try {
+            const rows = (await fetch()) || [];
+            tbody.innerHTML = ""; empty.classList.toggle("hidden", rows.length > 0);
+            for (const r of rows) {
+              const tr = el("tr");
+              for (const [, get] of cols) tr.appendChild(el("td", null, String(get(r) ?? "")));
+              tbody.appendChild(tr);
+            }
+          } catch (e) { toast(errText(e)); }
+        }
+        refreshBtn.onclick = reload; reload();
+      }
+
+      async function renderAccess() {
+        head("Access Control", "Regras de uma camada (layer). Somente leitura nesta versão.");
+        const c = $("content");
+        const sel = el("select"); sel.style.maxWidth = "320px";
+        const cols = [["#", (r) => r["rule-number"] ?? ""], ["Nome", (r) => r.name || ""], ["Ação", (r) => refName(r.action)],
+          ["Origem", (r) => refName(r.source)], ["Destino", (r) => refName(r.destination)], ["Serviço", (r) => refName(r.service)]];
+        const { table, tbody } = tableEl(cols.map((x) => x[0]));
+        const empty = el("div", "empty hidden", "Sem regras.");
+        const box = el("div"); box.appendChild(table); box.appendChild(empty);
+        c.appendChild(panel("Layer", sel));
+        c.appendChild(panel("Rulebase", box));
+        async function loadRules() {
+          if (!sel.value) return;
+          try {
+            const rows = (await api().ListAccessRulebase(sel.value)) || [];
+            tbody.innerHTML = ""; empty.classList.toggle("hidden", rows.length > 0);
+            for (const r of rows) {
+              if (r.type === "access-section") {
+                const tr = el("tr", "section"); const td = el("td"); td.colSpan = cols.length;
+                td.textContent = "▸ " + (r.name || "Seção"); tr.appendChild(td); tbody.appendChild(tr); continue;
+              }
+              const tr = el("tr");
+              for (const [, get] of cols) tr.appendChild(el("td", null, String(get(r) ?? "")));
+              tbody.appendChild(tr);
+            }
+          } catch (e) { toast(errText(e)); }
+        }
+        sel.onchange = loadRules;
+        try {
+          const layers = (await api().ListAccessLayers()) || [];
+          for (const l of layers) { const o = el("option", null, l.name); o.value = l.name; sel.appendChild(o); }
+          if (layers.length) loadRules();
+        } catch (e) { toast(errText(e)); }
+      }
+
+      async function renderNat() {
+        head("NAT", "Regras de NAT de um pacote de política. Somente leitura nesta versão.");
+        const c = $("content");
+        const sel = el("select"); sel.style.maxWidth = "320px";
+        const cols = [["#", (r) => r["rule-number"] ?? ""],
+          ["Orig. origem", (r) => refName(r["original-source"])], ["Orig. destino", (r) => refName(r["original-destination"])],
+          ["Orig. serviço", (r) => refName(r["original-service"])], ["Método", (r) => refName(r.method)]];
+        const { table, tbody } = tableEl(cols.map((x) => x[0]));
+        const empty = el("div", "empty hidden", "Sem regras de NAT.");
+        const box = el("div"); box.appendChild(table); box.appendChild(empty);
+        c.appendChild(panel("Package", sel));
+        c.appendChild(panel("NAT rulebase", box));
+        async function loadRules() {
+          if (!sel.value) return;
+          try {
+            const rows = (await api().ListNatRulebase(sel.value)) || [];
+            tbody.innerHTML = ""; empty.classList.toggle("hidden", rows.length > 0);
+            for (const r of rows) {
+              if (r.type === "nat-section") {
+                const tr = el("tr", "section"); const td = el("td"); td.colSpan = cols.length;
+                td.textContent = "▸ " + (r.name || "Seção"); tr.appendChild(td); tbody.appendChild(tr); continue;
+              }
+              const tr = el("tr");
+              for (const [, get] of cols) tr.appendChild(el("td", null, String(get(r) ?? "")));
+              tbody.appendChild(tr);
+            }
+          } catch (e) { toast(errText(e)); }
+        }
+        sel.onchange = loadRules;
+        try {
+          const pkgs = (await api().ListPackages()) || [];
+          for (const p of pkgs) { const o = el("option", null, p.name); o.value = p.name; sel.appendChild(o); }
+          if (pkgs.length) loadRules();
+        } catch (e) { toast(errText(e)); }
+      }
+
+      async function renderInstall() {
+        head("Instalar política", "Escolha o pacote e os gateways de destino.");
+        const c = $("content");
+        const sel = el("select"); sel.style.maxWidth = "320px";
+        const gwWrap = el("div", "chips");
+        const installBtn = el("button", "primary", "Instalar política");
+        const verifyBtn = el("button", "ghost", "Verificar");
+        const actions = el("div", "toolbar"); actions.appendChild(verifyBtn); actions.appendChild(installBtn);
+
+        c.appendChild(panel("Pacote", sel));
+        c.appendChild(panel("Gateways de destino", gwWrap));
+        const body = el("div"); body.appendChild(actions); c.appendChild(panel(null, body));
+
+        try {
+          const pkgs = (await api().ListPackages()) || [];
+          for (const p of pkgs) { const o = el("option", null, p.name); o.value = p.name; sel.appendChild(o); }
+        } catch (e) { toast(errText(e)); }
+        try {
+          const gws = (await api().ListGateways()) || [];
+          const targets = gws.filter((g) => /gateway/i.test(g.type || ""));
+          const list = targets.length ? targets : gws;
+          for (const g of list) {
+            const chip = el("label", "chip");
+            const cb = el("input"); cb.type = "checkbox"; cb.value = g.name;
+            chip.appendChild(cb); chip.appendChild(el("span", null, g.name || refName(g)));
+            gwWrap.appendChild(chip);
+          }
+          if (!list.length) gwWrap.appendChild(el("span", "sub", "Nenhum gateway encontrado."));
+        } catch (e) { toast(errText(e)); }
+
+        const chosen = () => [...gwWrap.querySelectorAll("input:checked")].map((i) => i.value);
+        verifyBtn.onclick = async () => {
+          if (!sel.value) return toast("Escolha um pacote.");
+          try { await api().VerifyPolicy(sel.value); toast("Verificação concluída sem erros.", true); }
+          catch (e) { toast(errText(e)); }
+        };
+        installBtn.onclick = async () => {
+          const targets = chosen();
+          if (!sel.value) return toast("Escolha um pacote.");
+          if (!targets.length) return toast("Selecione ao menos um gateway.");
+          installBtn.disabled = true; installBtn.textContent = "Instalando…";
+          try { await api().InstallPolicy(sel.value, targets); toast("Política instalada.", true); }
+          catch (e) { toast(errText(e)); }
+          finally { installBtn.disabled = false; installBtn.textContent = "Instalar política"; }
+        };
+      }
+
+      // ---- session actions --------------------------------------------
+      async function publish() { try { await api().Publish(); markPending(-pending); toast("Publicado.", true); render(current); } catch (e) { toast(errText(e)); } }
+      async function discard() { try { await api().Discard(); markPending(-pending); toast("Descartado.", true); render(current); } catch (e) { toast(errText(e)); } }
+      async function logout() { try { await api().Logout(); } catch (_) {} $("app").classList.add("hidden"); $("login").classList.remove("hidden"); }
+
+      // ---- login -------------------------------------------------------
       async function doLogin() {
         const req = {
-          server: $("in-server").value.trim(),
-          port: parseInt($("in-port").value, 10) || 0,
-          user: $("in-user").value.trim(),
-          password: $("in-pass").value,
-          insecure: $("in-insecure").checked,
+          server: $("in-server").value.trim(), port: parseInt($("in-port").value, 10) || 0,
+          user: $("in-user").value.trim(), password: $("in-pass").value, insecure: $("in-insecure").checked,
         };
         if (!req.server || !req.user) { toast("Preencha servidor e usuário."); return; }
         $("btn-login").disabled = true;
@@ -225,107 +539,17 @@
           $("who-server").textContent = info.server;
           $("who-user").textContent = "· " + info.user + (info.apiVersion ? " · API " + info.apiVersion : "");
           $("in-pass").value = "";
-          $("login").classList.add("hidden");
-          $("console").classList.remove("hidden");
-          markPending(0);
-          await refresh();
-        } catch (e) {
-          toast(errText(e));
-        } finally {
-          $("btn-login").disabled = false;
-        }
+          $("login").classList.add("hidden"); $("app").classList.remove("hidden");
+          markPending(0); buildNav(); select("host");
+        } catch (e) { toast(errText(e)); }
+        finally { $("btn-login").disabled = false; }
       }
 
-      async function refresh() {
-        try {
-          const hosts = (await api().ListHosts($("search").value.trim())) || [];
-          const rows = $("rows");
-          rows.innerHTML = "";
-          $("empty").classList.toggle("hidden", hosts.length > 0);
-          for (const h of hosts) {
-            const tr = document.createElement("tr");
-            const name = h["name"] || "";
-            const ip = h["ipv4-address"] || h["ipv6-address"] || "";
-            tr.innerHTML =
-              `<td>${escapeHtml(name)}</td><td>${escapeHtml(ip)}</td>` +
-              `<td class="actions"></td>`;
-            const del = document.createElement("button");
-            del.className = "ghost";
-            del.textContent = "Apagar";
-            del.onclick = () => removeHost(name);
-            tr.querySelector(".actions").appendChild(del);
-            rows.appendChild(tr);
-          }
-        } catch (e) {
-          toast(errText(e));
-        }
-      }
-
-      async function addHost() {
-        const name = $("add-name").value.trim();
-        const ip = $("add-ip").value.trim();
-        if (!name || !ip) { toast("Informe nome e IP do host."); return; }
-        try {
-          await api().AddHost(name, ip);
-          $("add-name").value = "";
-          $("add-ip").value = "";
-          markPending(1);
-          toast("Host criado (pendente de publish).", true);
-          await refresh();
-        } catch (e) {
-          toast(errText(e));
-        }
-      }
-
-      async function removeHost(name) {
-        try {
-          await api().DeleteHost(name);
-          markPending(1);
-          toast(`Host "${name}" removido (pendente de publish).`, true);
-          await refresh();
-        } catch (e) {
-          toast(errText(e));
-        }
-      }
-
-      async function publish() {
-        try {
-          await api().Publish();
-          markPending(-pendingChanges);
-          toast("Mudanças publicadas.", true);
-          await refresh();
-        } catch (e) {
-          toast(errText(e));
-        }
-      }
-
-      async function discard() {
-        try {
-          await api().Discard();
-          markPending(-pendingChanges);
-          toast("Mudanças descartadas.", true);
-          await refresh();
-        } catch (e) {
-          toast(errText(e));
-        }
-      }
-
-      async function logout() {
-        try { await api().Logout(); } catch (_) {}
-        $("console").classList.add("hidden");
-        $("login").classList.remove("hidden");
-      }
-
-      function escapeHtml(s) {
-        return String(s).replace(/[&<>"']/g, (c) =>
-          ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-      }
-
+      // ---- wiring ------------------------------------------------------
       $("btn-login").onclick = doLogin;
       $("in-pass").addEventListener("keydown", (e) => { if (e.key === "Enter") doLogin(); });
-      $("btn-refresh").onclick = refresh;
-      $("search").addEventListener("keydown", (e) => { if (e.key === "Enter") refresh(); });
-      $("btn-add").onclick = addHost;
+      $("theme-login").onclick = toggleTheme;
+      $("theme-app").onclick = toggleTheme;
       $("btn-publish").onclick = publish;
       $("btn-discard").onclick = discard;
       $("btn-logout").onclick = logout;

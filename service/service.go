@@ -10,6 +10,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 
 	"cpcli/internal/mgmt"
@@ -118,9 +119,43 @@ func (s *Service) conn() (apiClient, error) {
 	return s.client, nil
 }
 
-// ListHosts returns every host object, optionally narrowed by the Check Point
-// text filter.
-func (s *Service) ListHosts(filter string) ([]map[string]interface{}, error) {
+// --- Generic objects ---------------------------------------------------------
+
+// objectCommands is the set of Management API command names for one object
+// family. Command names don't follow a single pluralization rule, so each is
+// spelled out (mirrors the CLI's entitySpec).
+type objectCommands struct {
+	list, show, add, set, del string
+}
+
+var objectRegistry = map[string]objectCommands{
+	"host":        {"show-hosts", "show-host", "add-host", "set-host", "delete-host"},
+	"network":     {"show-networks", "show-network", "add-network", "set-network", "delete-network"},
+	"group":       {"show-groups", "show-group", "add-group", "set-group", "delete-group"},
+	"service-tcp": {"show-services-tcp", "show-service-tcp", "add-service-tcp", "set-service-tcp", "delete-service-tcp"},
+	"service-udp": {"show-services-udp", "show-service-udp", "add-service-udp", "set-service-udp", "delete-service-udp"},
+}
+
+// ObjectKinds returns the supported object type keys, in display order.
+func (s *Service) ObjectKinds() []string {
+	return []string{"host", "network", "group", "service-tcp", "service-udp"}
+}
+
+func resolveKind(kind string) (objectCommands, error) {
+	oc, ok := objectRegistry[kind]
+	if !ok {
+		return objectCommands{}, fmt.Errorf("tipo de objeto desconhecido: %q", kind)
+	}
+	return oc, nil
+}
+
+// ListObjects returns every object of the given kind, optionally narrowed by
+// the Check Point text filter.
+func (s *Service) ListObjects(kind, filter string) ([]map[string]interface{}, error) {
+	oc, err := resolveKind(kind)
+	if err != nil {
+		return nil, err
+	}
 	c, err := s.conn()
 	if err != nil {
 		return nil, err
@@ -129,40 +164,121 @@ func (s *Service) ListHosts(filter string) ([]map[string]interface{}, error) {
 	if filter != "" {
 		payload["filter"] = filter
 	}
-	items, err := c.List("show-hosts", "standard", "objects", payload)
+	items, err := c.List(oc.list, "standard", "objects", payload)
 	if err != nil {
 		return nil, err
 	}
 	return toMaps(items), nil
 }
 
-// GetHost returns the full detail of one host by name.
-func (s *Service) GetHost(name string) (map[string]interface{}, error) {
+// GetObject returns the full detail of one object by name.
+func (s *Service) GetObject(kind, name string) (map[string]interface{}, error) {
+	oc, err := resolveKind(kind)
+	if err != nil {
+		return nil, err
+	}
 	c, err := s.conn()
 	if err != nil {
 		return nil, err
 	}
-	return c.Call("show-host", map[string]interface{}{"name": name, "details-level": "full"}, false)
+	return c.Call(oc.show, map[string]interface{}{"name": name, "details-level": "full"}, false)
 }
 
-// AddHost creates a host object. The change is pending until Publish.
-func (s *Service) AddHost(name, ipAddress string) (map[string]interface{}, error) {
+// AddObject creates an object of the given kind from arbitrary API fields
+// (e.g. {"name","ip-address"} for a host, {"name","subnet4","mask-length4"}
+// for a network). The change is pending until Publish.
+func (s *Service) AddObject(kind string, fields map[string]interface{}) (map[string]interface{}, error) {
+	oc, err := resolveKind(kind)
+	if err != nil {
+		return nil, err
+	}
+	if name, _ := fields["name"].(string); name == "" {
+		return nil, errors.New("o campo 'name' é obrigatório")
+	}
 	c, err := s.conn()
 	if err != nil {
 		return nil, err
 	}
-	return c.Call("add-host", map[string]interface{}{"name": name, "ip-address": ipAddress}, true)
+	return c.Call(oc.add, fields, true)
 }
 
-// DeleteHost removes a host object by name. The change is pending until Publish.
-func (s *Service) DeleteHost(name string) error {
+// SetObject updates an existing object of the given kind. fields must identify
+// the object (by "name" or "uid") plus the fields to change.
+func (s *Service) SetObject(kind string, fields map[string]interface{}) (map[string]interface{}, error) {
+	oc, err := resolveKind(kind)
+	if err != nil {
+		return nil, err
+	}
+	c, err := s.conn()
+	if err != nil {
+		return nil, err
+	}
+	return c.Call(oc.set, fields, true)
+}
+
+// DeleteObject removes an object of the given kind by name. Pending until Publish.
+func (s *Service) DeleteObject(kind, name string) error {
+	oc, err := resolveKind(kind)
+	if err != nil {
+		return err
+	}
 	c, err := s.conn()
 	if err != nil {
 		return err
 	}
-	_, err = c.Call("delete-host", map[string]interface{}{"name": name}, true)
+	_, err = c.Call(oc.del, map[string]interface{}{"name": name}, true)
 	return err
 }
+
+// --- Access control / NAT (read) --------------------------------------------
+
+// ListAccessLayers returns the Access Control layers.
+func (s *Service) ListAccessLayers() ([]map[string]interface{}, error) {
+	return s.listSimple("show-access-layers", "objects", map[string]interface{}{})
+}
+
+// ListAccessRulebase returns the rules of one Access Control layer.
+func (s *Service) ListAccessRulebase(layer string) ([]map[string]interface{}, error) {
+	return s.listSimple("show-access-rulebase", "rulebase", map[string]interface{}{"name": layer})
+}
+
+// ListNatRulebase returns the NAT rules of one policy package.
+func (s *Service) ListNatRulebase(pkg string) ([]map[string]interface{}, error) {
+	return s.listSimple("show-nat-rulebase", "rulebase", map[string]interface{}{"package": pkg})
+}
+
+// --- Policy / gateways -------------------------------------------------------
+
+// ListPackages returns the policy packages.
+func (s *Service) ListPackages() ([]map[string]interface{}, error) {
+	return s.listSimple("show-packages", "packages", map[string]interface{}{})
+}
+
+// ListGateways returns gateways and servers known to the management.
+func (s *Service) ListGateways() ([]map[string]interface{}, error) {
+	return s.listSimple("show-gateways-and-servers", "objects", map[string]interface{}{})
+}
+
+// InstallPolicy installs a policy package on the given gateway targets and
+// waits for the task to finish.
+func (s *Service) InstallPolicy(pkg string, targets []string) (map[string]interface{}, error) {
+	c, err := s.conn()
+	if err != nil {
+		return nil, err
+	}
+	return c.Call("install-policy", map[string]interface{}{"policy-package": pkg, "targets": targets}, true)
+}
+
+// VerifyPolicy checks a policy package for errors before installing.
+func (s *Service) VerifyPolicy(pkg string) (map[string]interface{}, error) {
+	c, err := s.conn()
+	if err != nil {
+		return nil, err
+	}
+	return c.Call("verify-policy", map[string]interface{}{"policy-package": pkg}, true)
+}
+
+// --- Session changes ---------------------------------------------------------
 
 // Publish persists all pending changes made in this session.
 func (s *Service) Publish() (map[string]interface{}, error) {
@@ -180,6 +296,19 @@ func (s *Service) Discard() (map[string]interface{}, error) {
 		return nil, err
 	}
 	return c.Call("discard", map[string]interface{}{}, false)
+}
+
+// listSimple is the shared body of the read-only list helpers.
+func (s *Service) listSimple(command, containerKey string, payload map[string]interface{}) ([]map[string]interface{}, error) {
+	c, err := s.conn()
+	if err != nil {
+		return nil, err
+	}
+	items, err := c.List(command, "standard", containerKey, payload)
+	if err != nil {
+		return nil, err
+	}
+	return toMaps(items), nil
 }
 
 func toMaps(items []interface{}) []map[string]interface{} {
