@@ -178,7 +178,7 @@ func TestInstallPolicyBuildsPayload(t *testing.T) {
 
 func TestObjectKindsOrder(t *testing.T) {
 	got := New().ObjectKinds()
-	want := []string{"host", "network", "group", "service-tcp", "service-udp"}
+	want := []string{"host", "network", "group", "service-tcp", "service-udp", "address-range", "service-group", "access-role"}
 	if len(got) != len(want) {
 		t.Fatalf("ObjectKinds len = %d, want %d", len(got), len(want))
 	}
@@ -186,6 +186,70 @@ func TestObjectKindsOrder(t *testing.T) {
 		if got[i] != want[i] {
 			t.Errorf("ObjectKinds[%d] = %q, want %q", i, got[i], want[i])
 		}
+	}
+}
+
+func TestAddAccessRuleSetsLayer(t *testing.T) {
+	f := &fakeClient{}
+	s := connected(f)
+	if _, err := s.AddAccessRule("Network", map[string]interface{}{"name": "allow-web", "action": "accept"}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if f.lastCallCommand != "add-access-rule" || !f.lastCallWait {
+		t.Errorf("call = (%q, wait=%v), want (add-access-rule, true)", f.lastCallCommand, f.lastCallWait)
+	}
+	if f.lastCallPayload["layer"] != "Network" || f.lastCallPayload["action"] != "accept" {
+		t.Errorf("payload = %v, want layer=Network + action forwarded", f.lastCallPayload)
+	}
+}
+
+func TestDeleteAccessRuleByUID(t *testing.T) {
+	f := &fakeClient{}
+	s := connected(f)
+	if err := s.DeleteAccessRule("Network", "rule-uid-1"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if f.lastCallCommand != "delete-access-rule" || f.lastCallPayload["uid"] != "rule-uid-1" {
+		t.Errorf("call = (%q, uid=%v), want (delete-access-rule, rule-uid-1)", f.lastCallCommand, f.lastCallPayload["uid"])
+	}
+}
+
+func TestAddNatRuleSetsPackage(t *testing.T) {
+	f := &fakeClient{}
+	s := connected(f)
+	if _, err := s.AddNatRule("Standard", map[string]interface{}{"method": "static"}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if f.lastCallCommand != "add-nat-rule" || f.lastCallPayload["package"] != "Standard" {
+		t.Errorf("call = (%q, package=%v), want (add-nat-rule, Standard)", f.lastCallCommand, f.lastCallPayload["package"])
+	}
+}
+
+func TestVpnCommunityCommandsByKind(t *testing.T) {
+	f := &fakeClient{}
+	s := connected(f)
+	if _, err := s.AddVpnCommunity("star", map[string]interface{}{"name": "hub"}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if f.lastCallCommand != "add-vpn-community-star" {
+		t.Errorf("command = %q, want add-vpn-community-star", f.lastCallCommand)
+	}
+	if err := s.DeleteVpnCommunity("meshed", "mesh1"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if f.lastCallCommand != "delete-vpn-community-meshed" || f.lastCallPayload["name"] != "mesh1" {
+		t.Errorf("call = (%q, name=%v), want (delete-vpn-community-meshed, mesh1)", f.lastCallCommand, f.lastCallPayload["name"])
+	}
+}
+
+func TestUnknownVpnKindIsRejected(t *testing.T) {
+	f := &fakeClient{}
+	s := connected(f)
+	if _, err := s.AddVpnCommunity("triangle", map[string]interface{}{"name": "x"}); err == nil || !strings.Contains(err.Error(), "desconhecido") {
+		t.Fatalf("AddVpnCommunity unknown kind = %v, want an 'unknown kind' error", err)
+	}
+	if f.lastCallCommand != "" {
+		t.Error("an unknown VPN kind must not reach the API")
 	}
 }
 

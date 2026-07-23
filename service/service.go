@@ -129,16 +129,19 @@ type objectCommands struct {
 }
 
 var objectRegistry = map[string]objectCommands{
-	"host":        {"show-hosts", "show-host", "add-host", "set-host", "delete-host"},
-	"network":     {"show-networks", "show-network", "add-network", "set-network", "delete-network"},
-	"group":       {"show-groups", "show-group", "add-group", "set-group", "delete-group"},
-	"service-tcp": {"show-services-tcp", "show-service-tcp", "add-service-tcp", "set-service-tcp", "delete-service-tcp"},
-	"service-udp": {"show-services-udp", "show-service-udp", "add-service-udp", "set-service-udp", "delete-service-udp"},
+	"host":          {"show-hosts", "show-host", "add-host", "set-host", "delete-host"},
+	"network":       {"show-networks", "show-network", "add-network", "set-network", "delete-network"},
+	"group":         {"show-groups", "show-group", "add-group", "set-group", "delete-group"},
+	"service-tcp":   {"show-services-tcp", "show-service-tcp", "add-service-tcp", "set-service-tcp", "delete-service-tcp"},
+	"service-udp":   {"show-services-udp", "show-service-udp", "add-service-udp", "set-service-udp", "delete-service-udp"},
+	"address-range": {"show-address-ranges", "show-address-range", "add-address-range", "set-address-range", "delete-address-range"},
+	"service-group": {"show-service-groups", "show-service-group", "add-service-group", "set-service-group", "delete-service-group"},
+	"access-role":   {"show-access-roles", "show-access-role", "add-access-role", "set-access-role", "delete-access-role"},
 }
 
 // ObjectKinds returns the supported object type keys, in display order.
 func (s *Service) ObjectKinds() []string {
-	return []string{"host", "network", "group", "service-tcp", "service-udp"}
+	return []string{"host", "network", "group", "service-tcp", "service-udp", "address-range", "service-group", "access-role"}
 }
 
 func resolveKind(kind string) (objectCommands, error) {
@@ -278,6 +281,163 @@ func (s *Service) VerifyPolicy(pkg string) (map[string]interface{}, error) {
 	return c.Call("verify-policy", map[string]interface{}{"policy-package": pkg}, true)
 }
 
+// --- Access rules (CRUD) -----------------------------------------------------
+
+// AddAccessRule creates an access rule in the given layer. fields carries the
+// API body (name, action, source, destination, service, position, …).
+func (s *Service) AddAccessRule(layer string, fields map[string]interface{}) (map[string]interface{}, error) {
+	c, err := s.conn()
+	if err != nil {
+		return nil, err
+	}
+	p := cloneFields(fields)
+	p["layer"] = layer
+	return c.Call("add-access-rule", p, true)
+}
+
+// SetAccessRule updates the rule identified by uid in the given layer.
+func (s *Service) SetAccessRule(layer, uid string, fields map[string]interface{}) (map[string]interface{}, error) {
+	c, err := s.conn()
+	if err != nil {
+		return nil, err
+	}
+	p := cloneFields(fields)
+	p["layer"] = layer
+	p["uid"] = uid
+	return c.Call("set-access-rule", p, true)
+}
+
+// DeleteAccessRule removes the rule identified by uid in the given layer.
+func (s *Service) DeleteAccessRule(layer, uid string) error {
+	c, err := s.conn()
+	if err != nil {
+		return err
+	}
+	_, err = c.Call("delete-access-rule", map[string]interface{}{"layer": layer, "uid": uid}, true)
+	return err
+}
+
+// --- NAT rules (CRUD) --------------------------------------------------------
+
+// AddNatRule creates a manual NAT rule in the given policy package.
+func (s *Service) AddNatRule(pkg string, fields map[string]interface{}) (map[string]interface{}, error) {
+	c, err := s.conn()
+	if err != nil {
+		return nil, err
+	}
+	p := cloneFields(fields)
+	p["package"] = pkg
+	return c.Call("add-nat-rule", p, true)
+}
+
+// SetNatRule updates the NAT rule identified by uid in the given package.
+func (s *Service) SetNatRule(pkg, uid string, fields map[string]interface{}) (map[string]interface{}, error) {
+	c, err := s.conn()
+	if err != nil {
+		return nil, err
+	}
+	p := cloneFields(fields)
+	p["package"] = pkg
+	p["uid"] = uid
+	return c.Call("set-nat-rule", p, true)
+}
+
+// DeleteNatRule removes the NAT rule identified by uid in the given package.
+func (s *Service) DeleteNatRule(pkg, uid string) error {
+	c, err := s.conn()
+	if err != nil {
+		return err
+	}
+	_, err = c.Call("delete-nat-rule", map[string]interface{}{"package": pkg, "uid": uid}, true)
+	return err
+}
+
+// --- VPN communities ---------------------------------------------------------
+
+var vpnRegistry = map[string]objectCommands{
+	"meshed": {"show-vpn-communities-meshed", "show-vpn-community-meshed", "add-vpn-community-meshed", "set-vpn-community-meshed", "delete-vpn-community-meshed"},
+	"star":   {"show-vpn-communities-star", "show-vpn-community-star", "add-vpn-community-star", "set-vpn-community-star", "delete-vpn-community-star"},
+}
+
+func resolveVPN(kind string) (objectCommands, error) {
+	oc, ok := vpnRegistry[kind]
+	if !ok {
+		return objectCommands{}, fmt.Errorf("tipo de comunidade VPN desconhecido: %q", kind)
+	}
+	return oc, nil
+}
+
+// VpnKinds returns the supported VPN community topologies, in display order.
+func (s *Service) VpnKinds() []string { return []string{"star", "meshed"} }
+
+// ListVpnCommunities returns the VPN communities of the given topology.
+func (s *Service) ListVpnCommunities(kind string) ([]map[string]interface{}, error) {
+	oc, err := resolveVPN(kind)
+	if err != nil {
+		return nil, err
+	}
+	return s.listSimple(oc.list, "objects", map[string]interface{}{})
+}
+
+// GetVpnCommunity returns the full detail of one VPN community by name.
+func (s *Service) GetVpnCommunity(kind, name string) (map[string]interface{}, error) {
+	oc, err := resolveVPN(kind)
+	if err != nil {
+		return nil, err
+	}
+	c, err := s.conn()
+	if err != nil {
+		return nil, err
+	}
+	return c.Call(oc.show, map[string]interface{}{"name": name}, false)
+}
+
+// AddVpnCommunity creates a VPN community of the given topology from API fields
+// (e.g. {"name","gateways"} for meshed, {"name","center-gateways",
+// "satellite-gateways"} for star).
+func (s *Service) AddVpnCommunity(kind string, fields map[string]interface{}) (map[string]interface{}, error) {
+	oc, err := resolveVPN(kind)
+	if err != nil {
+		return nil, err
+	}
+	if name, _ := fields["name"].(string); name == "" {
+		return nil, errors.New("o campo 'name' é obrigatório")
+	}
+	c, err := s.conn()
+	if err != nil {
+		return nil, err
+	}
+	return c.Call(oc.add, fields, true)
+}
+
+// SetVpnCommunity updates an existing VPN community. fields must include the
+// identifying "name" plus the fields to change.
+func (s *Service) SetVpnCommunity(kind string, fields map[string]interface{}) (map[string]interface{}, error) {
+	oc, err := resolveVPN(kind)
+	if err != nil {
+		return nil, err
+	}
+	c, err := s.conn()
+	if err != nil {
+		return nil, err
+	}
+	return c.Call(oc.set, fields, true)
+}
+
+// DeleteVpnCommunity removes a VPN community by name.
+func (s *Service) DeleteVpnCommunity(kind, name string) error {
+	oc, err := resolveVPN(kind)
+	if err != nil {
+		return err
+	}
+	c, err := s.conn()
+	if err != nil {
+		return err
+	}
+	_, err = c.Call(oc.del, map[string]interface{}{"name": name}, true)
+	return err
+}
+
 // --- Session changes ---------------------------------------------------------
 
 // Publish persists all pending changes made in this session.
@@ -309,6 +469,16 @@ func (s *Service) listSimple(command, containerKey string, payload map[string]in
 		return nil, err
 	}
 	return toMaps(items), nil
+}
+
+// cloneFields returns a shallow copy of f so a method can add identifying keys
+// (layer, package, uid, …) without mutating the caller's map.
+func cloneFields(f map[string]interface{}) map[string]interface{} {
+	out := make(map[string]interface{}, len(f)+2)
+	for k, v := range f {
+		out[k] = v
+	}
+	return out
 }
 
 func toMaps(items []interface{}) []map[string]interface{} {

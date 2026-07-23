@@ -5,71 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>cpcli desktop</title>
     <style>
-      /* ---- Themes ---------------------------------------------------- */
       [data-theme="dark"] {
-        --bg: #0f1117;
-        --sidebar: #12141c;
-        --surface: #171a22;
-        --surface-2: #1e222c;
-        --border: #2a2f3a;
-        --text: #e6e8ee;
-        --muted: #8b93a4;
-        --row-hover: #1b1f28;
-        --shadow: 0 20px 50px -25px #000;
+        --bg: #0f1117; --sidebar: #12141c; --surface: #171a22; --surface-2: #1e222c;
+        --border: #2a2f3a; --text: #e6e8ee; --muted: #8b93a4; --row-hover: #1b1f28; --shadow: 0 20px 50px -25px #000;
       }
       [data-theme="light"] {
-        --bg: #f4f6f9;
-        --sidebar: #1f2430;
-        --surface: #ffffff;
-        --surface-2: #eef1f6;
-        --border: #dde2ea;
-        --text: #1b1f27;
-        --muted: #6b7482;
-        --row-hover: #f0f3f8;
-        --shadow: 0 18px 44px -28px #0007;
+        --bg: #f4f6f9; --sidebar: #1f2430; --surface: #ffffff; --surface-2: #eef1f6;
+        --border: #dde2ea; --text: #1b1f27; --muted: #6b7482; --row-hover: #f0f3f8; --shadow: 0 18px 44px -28px #0007;
       }
-      :root {
-        --accent: #e2452a;
-        --accent-soft: #e2452a22;
-        --ok: #3fb950;
-        --danger: #f85149;
-      }
-      /* sidebar keeps a dark identity in both themes (Portainer-like) */
+      :root { --accent: #e2452a; --accent-soft: #e2452a22; --ok: #3fb950; --danger: #f85149; }
       [data-theme="light"] .sidebar { --text: #e6e8ee; --muted: #9aa3b2; }
 
       * { box-sizing: border-box; }
       html, body { margin: 0; height: 100%; }
-      body {
-        background: var(--bg);
-        color: var(--text);
-        font: 14px/1.5 -apple-system, "Segoe UI", Roboto, Ubuntu, sans-serif;
-        -webkit-user-select: none; user-select: none;
-      }
-      button {
-        font: inherit; color: var(--text); background: var(--surface-2);
-        border: 1px solid var(--border); border-radius: 8px; padding: 8px 13px;
-        cursor: pointer; transition: background 120ms, border-color 120ms, filter 120ms;
-      }
+      body { background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system, "Segoe UI", Roboto, Ubuntu, sans-serif; -webkit-user-select: none; user-select: none; }
+      button { font: inherit; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 13px; cursor: pointer; transition: background 120ms, filter 120ms; }
       button:hover { filter: brightness(1.06); }
       button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
       button.ghost { background: transparent; }
       button.sm { padding: 5px 10px; font-size: 12px; }
+      button.danger { color: var(--danger); }
       button:disabled { opacity: .5; cursor: default; }
-      input, select {
-        font: inherit; color: var(--text); background: var(--bg);
-        border: 1px solid var(--border); border-radius: 8px; padding: 9px 11px; width: 100%;
-      }
+      input, select { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 9px 11px; width: 100%; }
       [data-theme="light"] input, [data-theme="light"] select { background: #fff; }
       input:focus, select:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
       label { display: block; font-size: 12px; color: var(--muted); margin: 0 0 5px; }
       .hidden { display: none !important; }
 
-      /* ---- Login ----------------------------------------------------- */
       #login { height: 100vh; display: grid; place-items: center; }
-      .card {
-        width: 380px; background: var(--surface); border: 1px solid var(--border);
-        border-radius: 16px; padding: 30px; box-shadow: var(--shadow);
-      }
+      .card { width: 380px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 30px; box-shadow: var(--shadow); }
       .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
       .brand .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 16px var(--accent); }
       .brand h1 { font-size: 17px; margin: 0; }
@@ -79,21 +43,14 @@
       .check { display: flex; align-items: center; gap: 8px; color: var(--muted); }
       .check input { width: auto; }
 
-      /* ---- App shell (Portainer-like) -------------------------------- */
       #app { height: 100vh; display: grid; grid-template-columns: 232px 1fr; }
-      .sidebar {
-        background: var(--sidebar); color: var(--text);
-        display: flex; flex-direction: column; border-right: 1px solid #000a;
-      }
+      .sidebar { background: var(--sidebar); color: var(--text); display: flex; flex-direction: column; border-right: 1px solid #000a; }
       .sidebar .head { padding: 18px 18px 14px; display: flex; align-items: center; gap: 10px; }
       .sidebar .head .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 14px var(--accent); }
       .sidebar .head b { font-size: 15px; }
       .nav { flex: 1; overflow-y: auto; padding: 6px 0 16px; }
       .nav .grp { color: var(--muted); font-size: 11px; letter-spacing: .8px; text-transform: uppercase; padding: 14px 18px 6px; }
-      .nav a {
-        display: flex; align-items: center; gap: 10px; padding: 9px 18px; cursor: pointer;
-        color: var(--text); opacity: .82; border-left: 3px solid transparent; font-size: 13.5px;
-      }
+      .nav a { display: flex; align-items: center; gap: 10px; padding: 9px 18px; cursor: pointer; color: var(--text); opacity: .82; border-left: 3px solid transparent; font-size: 13.5px; }
       .nav a:hover { opacity: 1; background: #ffffff0a; }
       .nav a.active { opacity: 1; background: #ffffff10; border-left-color: var(--accent); font-weight: 600; }
       .nav a .ic { width: 16px; text-align: center; opacity: .8; }
@@ -101,10 +58,7 @@
       .sidebar .foot button { flex: 1; }
 
       .main { display: grid; grid-template-rows: auto 1fr; min-width: 0; }
-      .topbar {
-        display: flex; align-items: center; gap: 14px; padding: 12px 20px;
-        border-bottom: 1px solid var(--border); background: var(--surface);
-      }
+      .topbar { display: flex; align-items: center; gap: 14px; padding: 12px 20px; border-bottom: 1px solid var(--border); background: var(--surface); }
       .topbar .conn { display: flex; align-items: center; gap: 9px; font-size: 13px; }
       .topbar .conn .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--ok); }
       .topbar .conn b { color: var(--text); }
@@ -122,31 +76,33 @@
       .panel .pb { padding: 14px 16px; }
       .toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
       .toolbar .search { flex: 1; min-width: 200px; }
-      .addbar { display: flex; gap: 10px; flex-wrap: wrap; }
-      .addbar input { flex: 1; min-width: 140px; }
+      .addbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+      .addbar input, .addbar select { flex: 1; min-width: 120px; }
 
       table { width: 100%; border-collapse: collapse; }
       th, td { text-align: left; padding: 10px 16px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
       th { color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
       tbody tr:hover { background: var(--row-hover); }
       td.actions { text-align: right; white-space: nowrap; }
+      td.actions button { margin-left: 6px; }
       tr.section td { background: var(--surface-2); font-weight: 600; color: var(--muted); }
       .empty { color: var(--muted); padding: 28px; text-align: center; }
       .chips { display: flex; gap: 6px; flex-wrap: wrap; }
       .chip { background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 5px 9px; font-size: 12px; display: flex; gap: 6px; align-items: center; }
       .chip input { width: auto; }
 
-      .toast {
-        position: fixed; right: 18px; bottom: 18px; max-width: 460px; z-index: 50;
-        background: var(--surface-2); border: 1px solid var(--border); border-left: 3px solid var(--danger);
-        border-radius: 8px; padding: 12px 14px; white-space: pre-wrap; font-size: 13px; box-shadow: var(--shadow);
-      }
+      .toast { position: fixed; right: 18px; bottom: 18px; max-width: 460px; z-index: 60; background: var(--surface-2); border: 1px solid var(--border); border-left: 3px solid var(--danger); border-radius: 8px; padding: 12px 14px; white-space: pre-wrap; font-size: 13px; box-shadow: var(--shadow); }
       .toast.ok { border-left-color: var(--ok); }
       .icon-btn { background: transparent; border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; }
+
+      .modal-ov { position: fixed; inset: 0; background: #0009; display: grid; place-items: center; z-index: 70; }
+      .modal { width: 480px; max-width: 92vw; max-height: 88vh; overflow: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); }
+      .modal-h { display: flex; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+      .modal-b { padding: 16px; }
+      .modal-f { display: flex; gap: 10px; justify-content: flex-end; padding: 12px 16px; border-top: 1px solid var(--border); }
     </style>
   </head>
   <body>
-    <!-- ===================== LOGIN ===================== -->
     <section id="login">
       <div class="card">
         <div class="brand">
@@ -161,22 +117,16 @@
           <div class="field" style="flex:1"><label>Porta</label><input id="in-port" placeholder="443" /></div>
         </div>
         <div class="field"><label>Senha</label><input id="in-pass" type="password" placeholder="••••••••" /></div>
-        <div class="field check">
-          <input id="in-insecure" type="checkbox" />
-          <label for="in-insecure" style="margin:0">Ignorar verificação de certificado TLS (só em lab)</label>
-        </div>
+        <div class="field check"><input id="in-insecure" type="checkbox" /><label for="in-insecure" style="margin:0">Ignorar verificação de certificado TLS (só em lab)</label></div>
         <button id="btn-login" class="primary" style="width:100%; margin-top:6px">Entrar</button>
       </div>
     </section>
 
-    <!-- ===================== APP ===================== -->
     <section id="app" class="hidden">
       <aside class="sidebar">
         <div class="head"><div class="dot"></div><b>cpcli</b></div>
         <nav class="nav" id="nav"></nav>
-        <div class="foot">
-          <button id="theme-app" class="ghost" title="Alternar tema">🌗 Tema</button>
-        </div>
+        <div class="foot"><button id="theme-app" class="ghost" title="Alternar tema">🌗 Tema</button></div>
       </aside>
       <div class="main">
         <div class="topbar">
@@ -195,66 +145,62 @@
       const api = () => window.go.service.Service;
       const $ = (id) => document.getElementById(id);
       const el = (t, cls, txt) => { const e = document.createElement(t); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+      const splitList = (s) => (s || "").split(",").map((x) => x.trim()).filter(Boolean);
 
       let pending = 0;
       let current = "host";
 
-      // ---- theme -------------------------------------------------------
-      function applyTheme(t) {
-        document.documentElement.setAttribute("data-theme", t);
-        try { localStorage.setItem("cpcli-theme", t); } catch (_) {}
-      }
-      function toggleTheme() {
-        const now = document.documentElement.getAttribute("data-theme");
-        applyTheme(now === "dark" ? "light" : "dark");
-      }
+      function applyTheme(t) { document.documentElement.setAttribute("data-theme", t); try { localStorage.setItem("cpcli-theme", t); } catch (_) {} }
+      function toggleTheme() { const n = document.documentElement.getAttribute("data-theme"); applyTheme(n === "dark" ? "light" : "dark"); }
       applyTheme((() => { try { return localStorage.getItem("cpcli-theme") || "dark"; } catch (_) { return "dark"; } })());
 
-      // ---- toast / helpers --------------------------------------------
-      function toast(msg, ok = false) {
-        const prev = document.querySelector(".toast"); if (prev) prev.remove();
-        const e = el("div", "toast" + (ok ? " ok" : "")); e.textContent = msg;
-        document.body.appendChild(e); setTimeout(() => e.remove(), ok ? 2500 : 6500);
-      }
+      function toast(msg, ok = false) { const p = document.querySelector(".toast"); if (p) p.remove(); const e = el("div", "toast" + (ok ? " ok" : "")); e.textContent = msg; document.body.appendChild(e); setTimeout(() => e.remove(), ok ? 2500 : 6500); }
       const errText = (e) => (e && e.message) ? e.message : String(e);
-      function markPending(n) {
-        pending = Math.max(0, pending + n);
-        $("pending").textContent = pending > 0 ? `${pending} mudança(s) pendente(s)` : "";
-      }
-      function refName(v) {
-        if (v == null) return "";
-        if (typeof v === "string") return v;
-        if (Array.isArray(v)) return v.map(refName).filter(Boolean).join(", ");
-        if (typeof v === "object") return v.name || v.uid || "";
-        return String(v);
-      }
+      function markPending(n) { pending = Math.max(0, pending + n); $("pending").textContent = pending > 0 ? `${pending} mudança(s) pendente(s)` : ""; }
+      function refName(v) { if (v == null) return ""; if (typeof v === "string") return v; if (Array.isArray(v)) return v.map(refName).filter(Boolean).join(", "); if (typeof v === "object") return v.name || v.uid || ""; return String(v); }
 
-      // ---- navigation model -------------------------------------------
+      // ---- modal -------------------------------------------------------
+      function closeModal() { const m = document.querySelector(".modal-ov"); if (m) m.remove(); }
+      function openModal(title, bodyNode, onSave) {
+        closeModal();
+        const ov = el("div", "modal-ov"); const card = el("div", "modal");
+        const h = el("div", "modal-h"); h.appendChild(el("b", null, title)); const sp = el("div"); sp.style.flex = "1"; h.appendChild(sp);
+        const x = el("button", "icon-btn sm", "✕"); x.onclick = closeModal; h.appendChild(x); card.appendChild(h);
+        const b = el("div", "modal-b"); b.appendChild(bodyNode); card.appendChild(b);
+        const f = el("div", "modal-f");
+        const cancel = el("button", "ghost", "Cancelar"); cancel.onclick = closeModal;
+        const save = el("button", "primary", "Salvar"); save.onclick = () => onSave();
+        f.appendChild(cancel); f.appendChild(save); card.appendChild(f);
+        ov.appendChild(card); ov.onclick = (e) => { if (e.target === ov) closeModal(); };
+        document.body.appendChild(ov);
+      }
+      function formField(labelText, inputEl) { const d = el("div", "field"); d.appendChild(el("label", null, labelText)); d.appendChild(inputEl); return d; }
+      function mkInput(ph, val) { const i = el("input"); if (ph) i.placeholder = ph; if (val != null) i.value = val; return i; }
+      function mkSelect(opts, val) { const s = el("select"); for (const o of opts) { const op = el("option", null, o); op.value = o; s.appendChild(op); } if (val != null) s.value = val; return s; }
+
+      // ---- nav / model -------------------------------------------------
       const NAV = [
         { group: "Objetos", items: [
-          { id: "host", label: "Hosts", ic: "🖥" },
-          { id: "network", label: "Networks", ic: "🌐" },
-          { id: "group", label: "Groups", ic: "📦" },
-          { id: "service-tcp", label: "Services TCP", ic: "🔌" },
-          { id: "service-udp", label: "Services UDP", ic: "📡" },
+          { id: "host", label: "Hosts", ic: "🖥" }, { id: "network", label: "Networks", ic: "🌐" },
+          { id: "group", label: "Groups", ic: "📦" }, { id: "service-tcp", label: "Services TCP", ic: "🔌" },
+          { id: "service-udp", label: "Services UDP", ic: "📡" }, { id: "address-range", label: "Address Ranges", ic: "📏" },
+          { id: "service-group", label: "Service Groups", ic: "🧩" }, { id: "access-role", label: "Access Roles", ic: "👤" },
         ]},
         { group: "Política", items: [
-          { id: "access", label: "Access Rules", ic: "🛡" },
-          { id: "nat", label: "NAT", ic: "🔀" },
-          { id: "install", label: "Instalar política", ic: "🚀" },
+          { id: "access", label: "Access Rules", ic: "🛡" }, { id: "nat", label: "NAT", ic: "🔀" }, { id: "install", label: "Instalar política", ic: "🚀" },
         ]},
-        { group: "Infraestrutura", items: [
-          { id: "gateways", label: "Gateways", ic: "🧱" },
-          { id: "packages", label: "Packages", ic: "🗂" },
-        ]},
+        { group: "VPN", items: [ { id: "vpn-star", label: "Star", ic: "⭐" }, { id: "vpn-meshed", label: "Meshed", ic: "🕸" } ]},
+        { group: "Infraestrutura", items: [ { id: "gateways", label: "Gateways", ic: "🧱" }, { id: "packages", label: "Packages", ic: "🗂" } ]},
       ];
-
       const KIND_FIELDS = {
         host: [{ k: "name", ph: "nome (ex: web-01)" }, { k: "ip-address", ph: "ip (ex: 10.0.0.10)" }],
         network: [{ k: "name", ph: "nome (ex: lan)" }, { k: "subnet4", ph: "subnet (ex: 10.0.0.0)" }, { k: "mask-length4", ph: "máscara (ex: 24)" }],
         group: [{ k: "name", ph: "nome do grupo" }],
         "service-tcp": [{ k: "name", ph: "nome (ex: my-tcp)" }, { k: "port", ph: "porta (ex: 8080)" }],
         "service-udp": [{ k: "name", ph: "nome (ex: my-udp)" }, { k: "port", ph: "porta (ex: 53)" }],
+        "address-range": [{ k: "name", ph: "nome (ex: dhcp-pool)" }, { k: "ipv4-address-first", ph: "IP inicial" }, { k: "ipv4-address-last", ph: "IP final" }],
+        "service-group": [{ k: "name", ph: "nome do grupo de serviços" }],
+        "access-role": [{ k: "name", ph: "nome do access-role" }],
       };
       const KIND_COLS = {
         host: [["Nome", (r) => r.name], ["IPv4", (r) => r["ipv4-address"] || r["ipv6-address"] || ""]],
@@ -262,8 +208,11 @@
         group: [["Nome", (r) => r.name], ["Membros", (r) => Array.isArray(r.members) ? r.members.length : ""]],
         "service-tcp": [["Nome", (r) => r.name], ["Porta", (r) => r.port || ""]],
         "service-udp": [["Nome", (r) => r.name], ["Porta", (r) => r.port || ""]],
+        "address-range": [["Nome", (r) => r.name], ["Range", (r) => `${r["ipv4-address-first"] || ""} – ${r["ipv4-address-last"] || ""}`]],
+        "service-group": [["Nome", (r) => r.name], ["Membros", (r) => Array.isArray(r.members) ? r.members.length : ""]],
+        "access-role": [["Nome", (r) => r.name], ["Comentário", (r) => r.comments || ""]],
       };
-      const KIND_TITLE = { host: "Hosts", network: "Networks", group: "Groups", "service-tcp": "Services TCP", "service-udp": "Services UDP" };
+      const KIND_TITLE = { host: "Hosts", network: "Networks", group: "Groups", "service-tcp": "Services TCP", "service-udp": "Services UDP", "address-range": "Address Ranges", "service-group": "Service Groups", "access-role": "Access Roles" };
 
       function buildNav() {
         const nav = $("nav"); nav.innerHTML = "";
@@ -273,80 +222,57 @@
             const a = el("a"); a.dataset.id = it.id;
             a.appendChild(Object.assign(el("span", "ic"), { textContent: it.ic }));
             a.appendChild(el("span", null, it.label));
-            a.onclick = () => select(it.id);
-            nav.appendChild(a);
+            a.onclick = () => select(it.id); nav.appendChild(a);
           }
         }
       }
-      function select(id) {
-        current = id;
-        for (const a of document.querySelectorAll(".nav a")) a.classList.toggle("active", a.dataset.id === id);
-        render(id);
-      }
+      function select(id) { current = id; for (const a of document.querySelectorAll(".nav a")) a.classList.toggle("active", a.dataset.id === id); render(id); }
 
-      // ---- generic table ----------------------------------------------
       function tableEl(headers) {
-        const table = el("table");
-        const thead = el("thead"); const tr = el("tr");
+        const table = el("table"); const thead = el("thead"); const tr = el("tr");
         for (const h of headers) tr.appendChild(el("th", null, h));
-        thead.appendChild(tr); table.appendChild(thead);
-        const tbody = el("tbody"); table.appendChild(tbody);
+        thead.appendChild(tr); table.appendChild(thead); const tbody = el("tbody"); table.appendChild(tbody);
         return { table, tbody };
       }
       function panel(titleText, bodyNode, headerExtra) {
         const p = el("div", "panel");
-        if (titleText || headerExtra) {
-          const ph = el("div", "ph"); ph.appendChild(el("span", "t", titleText || ""));
-          if (headerExtra) { const sp = el("div"); sp.style.flex = "1"; ph.appendChild(sp); ph.appendChild(headerExtra); }
-          p.appendChild(ph);
-        }
-        const pb = el("div", "pb"); pb.appendChild(bodyNode); p.appendChild(pb);
-        return p;
+        if (titleText || headerExtra) { const ph = el("div", "ph"); ph.appendChild(el("span", "t", titleText || "")); if (headerExtra) { const sp = el("div"); sp.style.flex = "1"; ph.appendChild(sp); ph.appendChild(headerExtra); } p.appendChild(ph); }
+        const pb = el("div", "pb"); pb.appendChild(bodyNode); p.appendChild(pb); return p;
       }
+      function head(title, sub) { const c = $("content"); c.appendChild(el("h2", null, title)); if (sub) c.appendChild(el("p", "sub", sub)); }
 
-      // ---- views -------------------------------------------------------
+      // ---- dispatch ----------------------------------------------------
       async function render(id) {
         const c = $("content"); c.innerHTML = "";
         if (KIND_FIELDS[id]) return renderObjects(id);
         if (id === "access") return renderAccess();
         if (id === "nat") return renderNat();
         if (id === "install") return renderInstall();
-        if (id === "gateways") return renderReadTable("Gateways", () => api().ListGateways(),
-          [["Nome", (r) => r.name], ["Tipo", (r) => r.type || ""], ["IPv4", (r) => r["ipv4-address"] || ""]]);
-        if (id === "packages") return renderReadTable("Policy Packages", () => api().ListPackages(),
-          [["Nome", (r) => r.name], ["Access", (r) => (r["access"] ? "sim" : "")], ["Threat", (r) => (r["threat-prevention"] ? "sim" : "")]]);
+        if (id === "vpn-star") return renderVpn("star");
+        if (id === "vpn-meshed") return renderVpn("meshed");
+        if (id === "gateways") return renderReadTable("Gateways", () => api().ListGateways(), [["Nome", (r) => r.name], ["Tipo", (r) => r.type || ""], ["IPv4", (r) => r["ipv4-address"] || ""]]);
+        if (id === "packages") return renderReadTable("Policy Packages", () => api().ListPackages(), [["Nome", (r) => r.name], ["Access", (r) => (r["access"] ? "sim" : "")], ["Threat", (r) => (r["threat-prevention"] ? "sim" : "")]]);
       }
 
-      function head(title, sub) {
-        const c = $("content");
-        c.appendChild(el("h2", null, title));
-        if (sub) c.appendChild(el("p", "sub", sub));
-      }
-
+      // ---- objects (CRUD + edit) --------------------------------------
       async function renderObjects(kind) {
         head(KIND_TITLE[kind], "Alterações ficam pendentes até o Publish.");
         const c = $("content");
-
-        // add form
-        const addWrap = el("div", "addbar");
-        const inputs = {};
-        for (const f of KIND_FIELDS[kind]) {
-          const i = el("input"); i.placeholder = f.ph; addWrap.appendChild(i); inputs[f.k] = i;
-        }
+        const addWrap = el("div", "addbar"); const inputs = {};
+        for (const f of KIND_FIELDS[kind]) { const i = mkInput(f.ph); addWrap.appendChild(i); inputs[f.k] = i; }
         const addBtn = el("button", "primary", "Adicionar"); addWrap.appendChild(addBtn);
         c.appendChild(panel("Novo " + kind, addWrap));
 
-        // toolbar + table
         const search = el("input", "search"); search.placeholder = "Filtrar…";
         const refreshBtn = el("button", null, "Atualizar");
         const tb = el("div", "toolbar"); tb.appendChild(search); tb.appendChild(refreshBtn);
-
         const cols = KIND_COLS[kind];
         const { table, tbody } = tableEl([...cols.map((x) => x[0]), ""]);
         const empty = el("div", "empty hidden", "Nenhum objeto. Adicione o primeiro acima.");
         const box = el("div"); box.appendChild(tb); box.appendChild(table); box.appendChild(empty);
         c.appendChild(panel(null, box));
 
+        const editable = KIND_FIELDS[kind].filter((f) => f.k !== "name");
         async function reload() {
           try {
             const rows = (await api().ListObjects(kind, search.value.trim())) || [];
@@ -355,8 +281,8 @@
               const tr = el("tr");
               for (const [, get] of cols) tr.appendChild(el("td", null, String(get(r) ?? "")));
               const td = el("td", "actions");
-              const del = el("button", "ghost sm", "Apagar");
-              del.onclick = () => removeObj(kind, r.name, reload);
+              if (editable.length) { const e = el("button", "ghost sm", "Editar"); e.onclick = () => editObject(kind, r, reload); td.appendChild(e); }
+              const del = el("button", "ghost sm danger", "Apagar"); del.onclick = () => removeObj(kind, r.name, reload);
               td.appendChild(del); tr.appendChild(td); tbody.appendChild(tr);
             }
           } catch (e) { toast(errText(e)); }
@@ -365,115 +291,214 @@
           const fields = {};
           for (const f of KIND_FIELDS[kind]) { const v = inputs[f.k].value.trim(); if (v) fields[f.k] = v; }
           if (!fields.name) { toast("Informe ao menos o nome."); return; }
-          try {
-            await api().AddObject(kind, fields);
-            for (const k in inputs) inputs[k].value = "";
-            markPending(1); toast("Criado (pendente de publish).", true); reload();
-          } catch (e) { toast(errText(e)); }
+          try { await api().AddObject(kind, fields); for (const k in inputs) inputs[k].value = ""; markPending(1); toast("Criado (pendente de publish).", true); reload(); }
+          catch (e) { toast(errText(e)); }
         };
         refreshBtn.onclick = reload;
         search.addEventListener("keydown", (e) => { if (e.key === "Enter") reload(); });
         reload();
       }
 
+      function editObject(kind, row, reload) {
+        const body = el("div");
+        body.appendChild(el("p", "sub", `Editando "${row.name}". Preencha só os campos que quer alterar.`));
+        const inputs = {};
+        for (const f of KIND_FIELDS[kind]) { if (f.k === "name") continue; const i = mkInput(f.ph); body.appendChild(formField(f.k, i)); inputs[f.k] = i; }
+        openModal("Editar " + kind, body, async () => {
+          const fields = { name: row.name };
+          for (const k in inputs) { const v = inputs[k].value.trim(); if (v) fields[k] = v; }
+          if (Object.keys(fields).length <= 1) { toast("Nada para alterar."); return; }
+          try { await api().SetObject(kind, fields); closeModal(); markPending(1); toast("Alterado (pendente).", true); reload(); }
+          catch (e) { toast(errText(e)); }
+        });
+      }
       async function removeObj(kind, name, reload) {
         try { await api().DeleteObject(kind, name); markPending(1); toast(`"${name}" removido (pendente).`, true); reload(); }
         catch (e) { toast(errText(e)); }
       }
 
+      // ---- read-only tables -------------------------------------------
       async function renderReadTable(title, fetch, cols) {
         head(title, "Somente leitura.");
-        const c = $("content");
         const { table, tbody } = tableEl(cols.map((x) => x[0]));
         const empty = el("div", "empty hidden", "Nada encontrado.");
         const box = el("div"); box.appendChild(table); box.appendChild(empty);
         const refreshBtn = el("button", "sm", "Atualizar");
-        c.appendChild(panel(title, box, refreshBtn));
+        $("content").appendChild(panel(title, box, refreshBtn));
         async function reload() {
-          try {
-            const rows = (await fetch()) || [];
-            tbody.innerHTML = ""; empty.classList.toggle("hidden", rows.length > 0);
-            for (const r of rows) {
-              const tr = el("tr");
-              for (const [, get] of cols) tr.appendChild(el("td", null, String(get(r) ?? "")));
-              tbody.appendChild(tr);
-            }
-          } catch (e) { toast(errText(e)); }
+          try { const rows = (await fetch()) || []; tbody.innerHTML = ""; empty.classList.toggle("hidden", rows.length > 0);
+            for (const r of rows) { const tr = el("tr"); for (const [, get] of cols) tr.appendChild(el("td", null, String(get(r) ?? ""))); tbody.appendChild(tr); } }
+          catch (e) { toast(errText(e)); }
         }
         refreshBtn.onclick = reload; reload();
       }
 
+      // ---- access rules (CRUD) ----------------------------------------
       async function renderAccess() {
-        head("Access Control", "Regras de uma camada (layer). Somente leitura nesta versão.");
+        head("Access Control", "Regras de uma camada (layer).");
         const c = $("content");
         const sel = el("select"); sel.style.maxWidth = "320px";
-        const cols = [["#", (r) => r["rule-number"] ?? ""], ["Nome", (r) => r.name || ""], ["Ação", (r) => refName(r.action)],
-          ["Origem", (r) => refName(r.source)], ["Destino", (r) => refName(r.destination)], ["Serviço", (r) => refName(r.service)]];
-        const { table, tbody } = tableEl(cols.map((x) => x[0]));
+        c.appendChild(panel("Layer", sel));
+
+        const nName = mkInput("nome (opcional)"); const nAction = mkSelect(["accept", "drop", "reject", "ask"], "accept");
+        const nPos = mkSelect(["top", "bottom"], "top"); const nSrc = mkInput("origem (nomes, vírgula) — vazio = Any");
+        const nDst = mkInput("destino (vírgula)"); const nSvc = mkInput("serviço (vírgula)");
+        const addBtn = el("button", "primary", "Adicionar regra");
+        const addWrap = el("div", "addbar");
+        [["Nome", nName], ["Ação", nAction], ["Posição", nPos], ["Origem", nSrc], ["Destino", nDst], ["Serviço", nSvc]].forEach(([l, i]) => addWrap.appendChild(formField(l, i)));
+        addWrap.appendChild(addBtn);
+        c.appendChild(panel("Nova regra", addWrap));
+
+        const cols = [["#", (r) => r["rule-number"] ?? ""], ["Nome", (r) => r.name || ""], ["Ação", (r) => refName(r.action)], ["Origem", (r) => refName(r.source)], ["Destino", (r) => refName(r.destination)], ["Serviço", (r) => refName(r.service)]];
+        const { table, tbody } = tableEl([...cols.map((x) => x[0]), ""]);
         const empty = el("div", "empty hidden", "Sem regras.");
         const box = el("div"); box.appendChild(table); box.appendChild(empty);
-        c.appendChild(panel("Layer", sel));
         c.appendChild(panel("Rulebase", box));
+
         async function loadRules() {
           if (!sel.value) return;
           try {
             const rows = (await api().ListAccessRulebase(sel.value)) || [];
             tbody.innerHTML = ""; empty.classList.toggle("hidden", rows.length > 0);
             for (const r of rows) {
-              if (r.type === "access-section") {
-                const tr = el("tr", "section"); const td = el("td"); td.colSpan = cols.length;
-                td.textContent = "▸ " + (r.name || "Seção"); tr.appendChild(td); tbody.appendChild(tr); continue;
-              }
+              if (r.type === "access-section") { const tr = el("tr", "section"); const td = el("td"); td.colSpan = cols.length + 1; td.textContent = "▸ " + (r.name || "Seção"); tr.appendChild(td); tbody.appendChild(tr); continue; }
               const tr = el("tr");
               for (const [, get] of cols) tr.appendChild(el("td", null, String(get(r) ?? "")));
-              tbody.appendChild(tr);
+              const td = el("td", "actions");
+              const e = el("button", "ghost sm", "Editar"); e.onclick = () => editRule(sel.value, r, loadRules); td.appendChild(e);
+              const d = el("button", "ghost sm danger", "Apagar"); d.onclick = () => delRule(sel.value, r.uid, loadRules); td.appendChild(d);
+              tr.appendChild(td); tbody.appendChild(tr);
             }
           } catch (e) { toast(errText(e)); }
         }
+        addBtn.onclick = async () => {
+          const fields = { action: nAction.value, position: nPos.value, enabled: true };
+          if (nName.value.trim()) fields.name = nName.value.trim();
+          if (splitList(nSrc.value).length) fields.source = splitList(nSrc.value);
+          if (splitList(nDst.value).length) fields.destination = splitList(nDst.value);
+          if (splitList(nSvc.value).length) fields.service = splitList(nSvc.value);
+          try { await api().AddAccessRule(sel.value, fields); nName.value = nSrc.value = nDst.value = nSvc.value = ""; markPending(1); toast("Regra criada (pendente).", true); loadRules(); }
+          catch (e) { toast(errText(e)); }
+        };
         sel.onchange = loadRules;
-        try {
-          const layers = (await api().ListAccessLayers()) || [];
-          for (const l of layers) { const o = el("option", null, l.name); o.value = l.name; sel.appendChild(o); }
-          if (layers.length) loadRules();
-        } catch (e) { toast(errText(e)); }
+        try { const layers = (await api().ListAccessLayers()) || []; for (const l of layers) { const o = el("option", null, l.name); o.value = l.name; sel.appendChild(o); } if (layers.length) loadRules(); }
+        catch (e) { toast(errText(e)); }
       }
+      function editRule(layer, r, reload) {
+        const body = el("div");
+        const aName = mkInput("nome", r.name || ""); const aAction = mkSelect(["accept", "drop", "reject", "ask"], refName(r.action).toLowerCase() || "accept");
+        const aEnabled = el("input"); aEnabled.type = "checkbox"; aEnabled.checked = r.enabled !== false; aEnabled.style.width = "auto";
+        const enWrap = el("div", "check"); enWrap.appendChild(aEnabled); enWrap.appendChild(el("label", null, "Habilitada"));
+        const aSrc = mkInput("origem (vírgula) — vazio mantém"); const aDst = mkInput("destino (vírgula)"); const aSvc = mkInput("serviço (vírgula)");
+        body.appendChild(formField("Nome", aName)); body.appendChild(formField("Ação", aAction)); body.appendChild(enWrap);
+        body.appendChild(formField("Origem", aSrc)); body.appendChild(formField("Destino", aDst)); body.appendChild(formField("Serviço", aSvc));
+        openModal("Editar regra", body, async () => {
+          const fields = { action: aAction.value, enabled: aEnabled.checked };
+          if (aName.value.trim()) fields.name = aName.value.trim();
+          if (splitList(aSrc.value).length) fields.source = splitList(aSrc.value);
+          if (splitList(aDst.value).length) fields.destination = splitList(aDst.value);
+          if (splitList(aSvc.value).length) fields.service = splitList(aSvc.value);
+          try { await api().SetAccessRule(layer, r.uid, fields); closeModal(); markPending(1); toast("Regra alterada (pendente).", true); reload(); }
+          catch (e) { toast(errText(e)); }
+        });
+      }
+      async function delRule(layer, uid, reload) { try { await api().DeleteAccessRule(layer, uid); markPending(1); toast("Regra removida (pendente).", true); reload(); } catch (e) { toast(errText(e)); } }
 
+      // ---- NAT (CRUD) --------------------------------------------------
       async function renderNat() {
-        head("NAT", "Regras de NAT de um pacote de política. Somente leitura nesta versão.");
+        head("NAT", "Regras de NAT de um pacote de política.");
         const c = $("content");
         const sel = el("select"); sel.style.maxWidth = "320px";
-        const cols = [["#", (r) => r["rule-number"] ?? ""],
-          ["Orig. origem", (r) => refName(r["original-source"])], ["Orig. destino", (r) => refName(r["original-destination"])],
-          ["Orig. serviço", (r) => refName(r["original-service"])], ["Método", (r) => refName(r.method)]];
-        const { table, tbody } = tableEl(cols.map((x) => x[0]));
+        c.appendChild(panel("Package", sel));
+
+        const oS = mkInput("original-source (nome)"); const oD = mkInput("original-destination"); const oSv = mkInput("original-service");
+        const tS = mkInput("translated-source"); const tD = mkInput("translated-destination"); const tSv = mkInput("translated-service");
+        const meth = mkSelect(["static", "hide"], "static"); const pos = mkSelect(["top", "bottom"], "top");
+        const addBtn = el("button", "primary", "Adicionar NAT");
+        const addWrap = el("div", "addbar");
+        [["Orig. origem", oS], ["Orig. destino", oD], ["Orig. serviço", oSv], ["Trad. origem", tS], ["Trad. destino", tD], ["Trad. serviço", tSv], ["Método", meth], ["Posição", pos]].forEach(([l, i]) => addWrap.appendChild(formField(l, i)));
+        addWrap.appendChild(addBtn);
+        c.appendChild(panel("Nova regra NAT", addWrap));
+
+        const cols = [["#", (r) => r["rule-number"] ?? ""], ["Orig. origem", (r) => refName(r["original-source"])], ["Orig. destino", (r) => refName(r["original-destination"])], ["Orig. serviço", (r) => refName(r["original-service"])], ["Método", (r) => refName(r.method)]];
+        const { table, tbody } = tableEl([...cols.map((x) => x[0]), ""]);
         const empty = el("div", "empty hidden", "Sem regras de NAT.");
         const box = el("div"); box.appendChild(table); box.appendChild(empty);
-        c.appendChild(panel("Package", sel));
         c.appendChild(panel("NAT rulebase", box));
+
         async function loadRules() {
           if (!sel.value) return;
           try {
             const rows = (await api().ListNatRulebase(sel.value)) || [];
             tbody.innerHTML = ""; empty.classList.toggle("hidden", rows.length > 0);
             for (const r of rows) {
-              if (r.type === "nat-section") {
-                const tr = el("tr", "section"); const td = el("td"); td.colSpan = cols.length;
-                td.textContent = "▸ " + (r.name || "Seção"); tr.appendChild(td); tbody.appendChild(tr); continue;
-              }
+              if (r.type === "nat-section") { const tr = el("tr", "section"); const td = el("td"); td.colSpan = cols.length + 1; td.textContent = "▸ " + (r.name || "Seção"); tr.appendChild(td); tbody.appendChild(tr); continue; }
               const tr = el("tr");
               for (const [, get] of cols) tr.appendChild(el("td", null, String(get(r) ?? "")));
-              tbody.appendChild(tr);
+              const td = el("td", "actions");
+              const d = el("button", "ghost sm danger", "Apagar"); d.onclick = () => delNat(sel.value, r.uid, loadRules); td.appendChild(d);
+              tr.appendChild(td); tbody.appendChild(tr);
             }
           } catch (e) { toast(errText(e)); }
         }
+        addBtn.onclick = async () => {
+          const f = { method: meth.value, position: pos.value };
+          const map = { "original-source": oS, "original-destination": oD, "original-service": oSv, "translated-source": tS, "translated-destination": tD, "translated-service": tSv };
+          for (const k in map) { const v = map[k].value.trim(); if (v) f[k] = v; }
+          try { await api().AddNatRule(sel.value, f); for (const k in map) map[k].value = ""; markPending(1); toast("NAT criada (pendente).", true); loadRules(); }
+          catch (e) { toast(errText(e)); }
+        };
         sel.onchange = loadRules;
-        try {
-          const pkgs = (await api().ListPackages()) || [];
-          for (const p of pkgs) { const o = el("option", null, p.name); o.value = p.name; sel.appendChild(o); }
-          if (pkgs.length) loadRules();
-        } catch (e) { toast(errText(e)); }
+        try { const pkgs = (await api().ListPackages()) || []; for (const p of pkgs) { const o = el("option", null, p.name); o.value = p.name; sel.appendChild(o); } if (pkgs.length) loadRules(); }
+        catch (e) { toast(errText(e)); }
       }
+      async function delNat(pkg, uid, reload) { try { await api().DeleteNatRule(pkg, uid); markPending(1); toast("NAT removida (pendente).", true); reload(); } catch (e) { toast(errText(e)); } }
 
+      // ---- VPN communities --------------------------------------------
+      async function renderVpn(kind) {
+        head("VPN " + (kind === "star" ? "Star" : "Meshed"), "Comunidades VPN site-to-site.");
+        const c = $("content");
+        const nName = mkInput("nome da comunidade");
+        const addWrap = el("div", "addbar"); addWrap.appendChild(formField("Nome", nName));
+        const extra = {};
+        const specs = kind === "star"
+          ? [["center-gateways", "gateways centrais (vírgula)"], ["satellite-gateways", "satélites (vírgula)"]]
+          : [["gateways", "gateways (vírgula)"]];
+        for (const [k, ph] of specs) { const i = mkInput(ph); addWrap.appendChild(formField(k, i)); extra[k] = i; }
+        const addBtn = el("button", "primary", "Criar comunidade"); addWrap.appendChild(addBtn);
+        c.appendChild(panel("Nova comunidade " + kind, addWrap));
+
+        const cols = kind === "star"
+          ? [["Nome", (r) => r.name], ["Centrais", (r) => refName(r["center-gateways"])], ["Satélites", (r) => refName(r["satellite-gateways"])]]
+          : [["Nome", (r) => r.name], ["Gateways", (r) => refName(r.gateways)]];
+        const { table, tbody } = tableEl([...cols.map((x) => x[0]), ""]);
+        const empty = el("div", "empty hidden", "Nenhuma comunidade.");
+        const box = el("div"); box.appendChild(table); box.appendChild(empty);
+        c.appendChild(panel("Comunidades", box));
+
+        async function reload() {
+          try {
+            const rows = (await api().ListVpnCommunities(kind)) || [];
+            tbody.innerHTML = ""; empty.classList.toggle("hidden", rows.length > 0);
+            for (const r of rows) {
+              const tr = el("tr"); for (const [, get] of cols) tr.appendChild(el("td", null, String(get(r) ?? "")));
+              const td = el("td", "actions"); const d = el("button", "ghost sm danger", "Apagar"); d.onclick = () => delVpn(kind, r.name, reload); td.appendChild(d);
+              tr.appendChild(td); tbody.appendChild(tr);
+            }
+          } catch (e) { toast(errText(e)); }
+        }
+        addBtn.onclick = async () => {
+          if (!nName.value.trim()) { toast("Informe o nome."); return; }
+          const f = { name: nName.value.trim() };
+          for (const k in extra) { const list = splitList(extra[k].value); if (list.length) f[k] = list; }
+          try { await api().AddVpnCommunity(kind, f); nName.value = ""; for (const k in extra) extra[k].value = ""; markPending(1); toast("Comunidade criada (pendente).", true); reload(); }
+          catch (e) { toast(errText(e)); }
+        };
+        reload();
+      }
+      async function delVpn(kind, name, reload) { try { await api().DeleteVpnCommunity(kind, name); markPending(1); toast(`"${name}" removida (pendente).`, true); reload(); } catch (e) { toast(errText(e)); } }
+
+      // ---- install policy ---------------------------------------------
       async function renderInstall() {
         head("Instalar política", "Escolha o pacote e os gateways de destino.");
         const c = $("content");
@@ -482,70 +507,43 @@
         const installBtn = el("button", "primary", "Instalar política");
         const verifyBtn = el("button", "ghost", "Verificar");
         const actions = el("div", "toolbar"); actions.appendChild(verifyBtn); actions.appendChild(installBtn);
-
         c.appendChild(panel("Pacote", sel));
         c.appendChild(panel("Gateways de destino", gwWrap));
         const body = el("div"); body.appendChild(actions); c.appendChild(panel(null, body));
-
-        try {
-          const pkgs = (await api().ListPackages()) || [];
-          for (const p of pkgs) { const o = el("option", null, p.name); o.value = p.name; sel.appendChild(o); }
-        } catch (e) { toast(errText(e)); }
+        try { const pkgs = (await api().ListPackages()) || []; for (const p of pkgs) { const o = el("option", null, p.name); o.value = p.name; sel.appendChild(o); } } catch (e) { toast(errText(e)); }
         try {
           const gws = (await api().ListGateways()) || [];
-          const targets = gws.filter((g) => /gateway/i.test(g.type || ""));
-          const list = targets.length ? targets : gws;
-          for (const g of list) {
-            const chip = el("label", "chip");
-            const cb = el("input"); cb.type = "checkbox"; cb.value = g.name;
-            chip.appendChild(cb); chip.appendChild(el("span", null, g.name || refName(g)));
-            gwWrap.appendChild(chip);
-          }
+          const targets = gws.filter((g) => /gateway/i.test(g.type || "")); const list = targets.length ? targets : gws;
+          for (const g of list) { const chip = el("label", "chip"); const cb = el("input"); cb.type = "checkbox"; cb.value = g.name; chip.appendChild(cb); chip.appendChild(el("span", null, g.name || refName(g))); gwWrap.appendChild(chip); }
           if (!list.length) gwWrap.appendChild(el("span", "sub", "Nenhum gateway encontrado."));
         } catch (e) { toast(errText(e)); }
-
         const chosen = () => [...gwWrap.querySelectorAll("input:checked")].map((i) => i.value);
-        verifyBtn.onclick = async () => {
-          if (!sel.value) return toast("Escolha um pacote.");
-          try { await api().VerifyPolicy(sel.value); toast("Verificação concluída sem erros.", true); }
-          catch (e) { toast(errText(e)); }
-        };
+        verifyBtn.onclick = async () => { if (!sel.value) return toast("Escolha um pacote."); try { await api().VerifyPolicy(sel.value); toast("Verificação concluída sem erros.", true); } catch (e) { toast(errText(e)); } };
         installBtn.onclick = async () => {
-          const targets = chosen();
-          if (!sel.value) return toast("Escolha um pacote.");
-          if (!targets.length) return toast("Selecione ao menos um gateway.");
+          const targets = chosen(); if (!sel.value) return toast("Escolha um pacote."); if (!targets.length) return toast("Selecione ao menos um gateway.");
           installBtn.disabled = true; installBtn.textContent = "Instalando…";
-          try { await api().InstallPolicy(sel.value, targets); toast("Política instalada.", true); }
-          catch (e) { toast(errText(e)); }
-          finally { installBtn.disabled = false; installBtn.textContent = "Instalar política"; }
+          try { await api().InstallPolicy(sel.value, targets); toast("Política instalada.", true); } catch (e) { toast(errText(e)); } finally { installBtn.disabled = false; installBtn.textContent = "Instalar política"; }
         };
       }
 
-      // ---- session actions --------------------------------------------
+      // ---- session / login --------------------------------------------
       async function publish() { try { await api().Publish(); markPending(-pending); toast("Publicado.", true); render(current); } catch (e) { toast(errText(e)); } }
       async function discard() { try { await api().Discard(); markPending(-pending); toast("Descartado.", true); render(current); } catch (e) { toast(errText(e)); } }
       async function logout() { try { await api().Logout(); } catch (_) {} $("app").classList.add("hidden"); $("login").classList.remove("hidden"); }
 
-      // ---- login -------------------------------------------------------
       async function doLogin() {
-        const req = {
-          server: $("in-server").value.trim(), port: parseInt($("in-port").value, 10) || 0,
-          user: $("in-user").value.trim(), password: $("in-pass").value, insecure: $("in-insecure").checked,
-        };
+        const req = { server: $("in-server").value.trim(), port: parseInt($("in-port").value, 10) || 0, user: $("in-user").value.trim(), password: $("in-pass").value, insecure: $("in-insecure").checked };
         if (!req.server || !req.user) { toast("Preencha servidor e usuário."); return; }
         $("btn-login").disabled = true;
         try {
           const info = await api().Login(req);
           $("who-server").textContent = info.server;
           $("who-user").textContent = "· " + info.user + (info.apiVersion ? " · API " + info.apiVersion : "");
-          $("in-pass").value = "";
-          $("login").classList.add("hidden"); $("app").classList.remove("hidden");
+          $("in-pass").value = ""; $("login").classList.add("hidden"); $("app").classList.remove("hidden");
           markPending(0); buildNav(); select("host");
-        } catch (e) { toast(errText(e)); }
-        finally { $("btn-login").disabled = false; }
+        } catch (e) { toast(errText(e)); } finally { $("btn-login").disabled = false; }
       }
 
-      // ---- wiring ------------------------------------------------------
       $("btn-login").onclick = doLogin;
       $("in-pass").addEventListener("keydown", (e) => { if (e.key === "Enter") doLogin(); });
       $("theme-login").onclick = toggleTheme;
