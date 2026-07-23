@@ -38,11 +38,11 @@ func newRawCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			res, err := apiCallWithTimeout(client, command, payload, !noWait)
+			data, err := client.Call(command, payload, !noWait)
 			if err != nil {
 				return err
 			}
-			return printResult(res)
+			return printData(data)
 		},
 	}
 

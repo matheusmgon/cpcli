@@ -26,11 +26,8 @@ func newLogoutCmd() *cobra.Command {
 			// fails (server unreachable, sid already expired, ...) — but
 			// warn instead of silently pretending the server-side session
 			// was actually closed.
-			res, callErr := client.ApiCallSimple("logout", map[string]interface{}{})
-			if callErr != nil {
-				fmt.Fprintf(os.Stderr, "aviso: falha ao encerrar a sessão no servidor: %v\n", callErr)
-			} else if !res.Success {
-				fmt.Fprintf(os.Stderr, "aviso: o servidor recusou o logout: %s\n", res.ErrorMsg)
+			if err := client.Logout(); err != nil {
+				fmt.Fprintf(os.Stderr, "aviso: falha ao encerrar a sessão no servidor: %v\n", err)
 			}
 			return session.Clear(activeProfile())
 		},

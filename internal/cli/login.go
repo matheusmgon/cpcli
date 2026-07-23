@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"os"
 
-	api "github.com/CheckPointSW/cp-mgmt-api-go-sdk/APIFiles"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 
+	"cpcli/internal/mgmt"
 	"cpcli/internal/session"
 )
 
@@ -34,35 +34,38 @@ func newLoginCmd() *cobra.Command {
 				return fmt.Errorf("informe --user (login com usuário/senha) ou --api-key")
 			}
 
-			clientArgs := api.APIClientArgs(port, "", "", server, "", -1, "", insecure, false, "", api.WebContext, api.TimeOut, api.SleepTime, "cpcli", "", -1)
-			client := api.APIClient(clientArgs)
-
-			var loginRes api.APIResponse
-			var err error
-			if apiKey != "" {
-				loginRes, err = client.ApiLoginWithApiKey(apiKey, continueSession, domain, readOnly, nil)
-			} else {
-				password := os.Getenv("CPCLI_PASSWORD")
+			password := ""
+			if apiKey == "" {
+				password = os.Getenv("CPCLI_PASSWORD")
 				if password == "" {
-					password, err = promptPassword()
-					if err != nil {
-						return fmt.Errorf("falha ao ler senha: %w", err)
+					var perr error
+					password, perr = promptPassword()
+					if perr != nil {
+						return fmt.Errorf("falha ao ler senha: %w", perr)
 					}
 				}
-				loginRes, err = client.ApiLogin(user, password, continueSession, domain, readOnly, nil)
 			}
+
+			_, res, err := mgmt.Login(mgmt.LoginOptions{
+				Server:          server,
+				Port:            port,
+				User:            user,
+				Password:        password,
+				APIKey:          apiKey,
+				Domain:          domain,
+				ReadOnly:        readOnly,
+				ContinueSession: continueSession,
+				Insecure:        insecure,
+			})
 			if err != nil {
 				return err
-			}
-			if !loginRes.Success {
-				return fmt.Errorf("login falhou: %s", loginRes.ErrorMsg)
 			}
 
 			sess := &session.Session{
 				Server:     server,
 				Port:       port,
-				Sid:        client.GetSessionID(),
-				ApiVersion: stringField(loginRes.GetData(), "api-server-version"),
+				Sid:        res.Sid,
+				ApiVersion: res.APIVersion,
 				Domain:     domain,
 				User:       user,
 				ReadOnly:   readOnly,
@@ -77,7 +80,7 @@ func newLoginCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&server, "server", "", "Endereço IP ou hostname do Management Server (obrigatório)")
-	cmd.Flags().IntVar(&port, "port", api.DefaultPort, "Porta da API")
+	cmd.Flags().IntVar(&port, "port", mgmt.DefaultPort, "Porta da API")
 	cmd.Flags().StringVar(&user, "user", "", "Usuário administrador (senha via CPCLI_PASSWORD ou prompt interativo)")
 	cmd.Flags().StringVar(&apiKey, "api-key", "", "Autentica via API key ao invés de usuário/senha")
 	cmd.Flags().StringVar(&domain, "domain", "", "Nome/UID/IP do domínio (Multi-Domain Server)")
@@ -99,11 +102,4 @@ func promptPassword() (string, error) {
 		return "", err
 	}
 	return string(b), nil
-}
-
-func stringField(data map[string]interface{}, key string) string {
-	if v, ok := data[key].(string); ok {
-		return v
-	}
-	return ""
 }
