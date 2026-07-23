@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>cpcli desktop</title>
+    <style>
+      :root {
+        --bg: #0f1117;
+        --surface: #171a22;
+        --surface-2: #1e222c;
+        --border: #2a2f3a;
+        --text: #e6e8ee;
+        --muted: #8b93a4;
+        --accent: #e2452a; /* Check Point red */
+        --accent-soft: #e2452a22;
+        --ok: #3fb950;
+        --danger: #f85149;
+        --radius: 10px;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font: 14px/1.5 -apple-system, "Segoe UI", Roboto, Ubuntu, sans-serif;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      button {
+        font: inherit;
+        color: var(--text);
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 8px 14px;
+        cursor: pointer;
+        transition: background 120ms ease, border-color 120ms ease;
+      }
+      button:hover { background: #262b36; }
+      button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+      button.primary:hover { filter: brightness(1.08); }
+      button.ghost { background: transparent; }
+      button:disabled { opacity: .5; cursor: default; }
+      input, select {
+        font: inherit;
+        color: var(--text);
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 9px 11px;
+        width: 100%;
+      }
+      input:focus, select:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+      label { display: block; font-size: 12px; color: var(--muted); margin: 0 0 5px; }
+      .hidden { display: none !important; }
+
+      /* Login */
+      #login {
+        height: 100vh;
+        display: grid;
+        place-items: center;
+      }
+      .card {
+        width: 380px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 30px;
+        box-shadow: 0 24px 60px -30px #000;
+      }
+      .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
+      .brand .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 16px var(--accent); }
+      .brand h1 { font-size: 17px; margin: 0; letter-spacing: .2px; }
+      .brand span { color: var(--muted); font-size: 12px; }
+      .field { margin-bottom: 14px; }
+      .row { display: flex; gap: 12px; }
+      .check { display: flex; align-items: center; gap: 8px; color: var(--muted); }
+      .check input { width: auto; }
+
+      /* Console */
+      #console { height: 100vh; display: grid; grid-template-rows: auto 1fr; }
+      header.bar {
+        display: flex; align-items: center; gap: 14px;
+        padding: 12px 18px; border-bottom: 1px solid var(--border); background: var(--surface);
+      }
+      header.bar .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--ok); }
+      header.bar .who { font-size: 13px; }
+      header.bar .who b { color: var(--text); }
+      header.bar .who span { color: var(--muted); }
+      header.bar .spacer { flex: 1; }
+      main { padding: 18px; overflow: auto; }
+      .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+      .toolbar .search { flex: 1; min-width: 200px; }
+      .pending { color: var(--accent); font-size: 12px; }
+
+      table { width: 100%; border-collapse: collapse; }
+      th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+      th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
+      tbody tr:hover { background: var(--surface); }
+      td.actions { text-align: right; }
+      .empty { color: var(--muted); padding: 30px; text-align: center; }
+
+      .toast {
+        position: fixed; right: 18px; bottom: 18px; max-width: 420px;
+        background: var(--surface-2); border: 1px solid var(--border);
+        border-left: 3px solid var(--danger); border-radius: 8px;
+        padding: 12px 14px; white-space: pre-wrap; font-size: 13px;
+        box-shadow: 0 20px 50px -25px #000;
+      }
+      .toast.ok { border-left-color: var(--ok); }
+
+      /* Add-host inline form */
+      .addbar { display: flex; gap: 10px; margin-bottom: 14px; }
+      .addbar input { flex: 1; }
+    </style>
+  </head>
+  <body>
+    <!-- ===== LOGIN ===== -->
+    <section id="login">
+      <div class="card">
+        <div class="brand">
+          <div class="dot"></div>
+          <div>
+            <h1>cpcli desktop</h1>
+            <span>Check Point Management</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Servidor</label>
+          <input id="in-server" placeholder="192.168.56.10" />
+        </div>
+        <div class="row">
+          <div class="field" style="flex:2">
+            <label>Usuário</label>
+            <input id="in-user" placeholder="admin" />
+          </div>
+          <div class="field" style="flex:1">
+            <label>Porta</label>
+            <input id="in-port" placeholder="443" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Senha</label>
+          <input id="in-pass" type="password" placeholder="••••••••" />
+        </div>
+        <div class="field check">
+          <input id="in-insecure" type="checkbox" />
+          <label for="in-insecure" style="margin:0">Ignorar verificação de certificado TLS (só em lab)</label>
+        </div>
+        <button id="btn-login" class="primary" style="width:100%; margin-top:6px">Entrar</button>
+      </div>
+    </section>
+
+    <!-- ===== CONSOLE ===== -->
+    <section id="console" class="hidden">
+      <header class="bar">
+        <div class="dot"></div>
+        <div class="who"><b id="who-server"></b> <span id="who-user"></span></div>
+        <div class="spacer"></div>
+        <span id="pending" class="pending"></span>
+        <button id="btn-publish" class="primary">Publish</button>
+        <button id="btn-discard" class="ghost">Discard</button>
+        <button id="btn-logout" class="ghost">Sair</button>
+      </header>
+      <main>
+        <div class="toolbar">
+          <input id="search" class="search" placeholder="Filtrar hosts…" />
+          <button id="btn-refresh">Atualizar</button>
+        </div>
+        <div class="addbar">
+          <input id="add-name" placeholder="nome do host (ex: web-01)" />
+          <input id="add-ip" placeholder="ip (ex: 10.0.0.10)" />
+          <button id="btn-add" class="primary">Adicionar host</button>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Nome</th><th>IPv4</th><th></th></tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+        <div id="empty" class="empty hidden">Nenhum host. Adicione o primeiro acima.</div>
+      </main>
+    </section>
+
+    <script>
+      // Bound Go facade (see main.go Bind): window.go.service.Service.*
+      const api = () => window.go.service.Service;
+      const $ = (id) => document.getElementById(id);
+
+      let pendingChanges = 0;
+
+      function toast(msg, ok = false) {
+        const prev = document.querySelector(".toast");
+        if (prev) prev.remove();
+        const el = document.createElement("div");
+        el.className = "toast" + (ok ? " ok" : "");
+        el.textContent = msg;
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), ok ? 2500 : 6000);
+      }
+
+      function errText(e) {
+        return (e && e.message) ? e.message : String(e);
+      }
+
+      function markPending(n) {
+        pendingChanges += n;
+        if (pendingChanges < 0) pendingChanges = 0;
+        $("pending").textContent = pendingChanges > 0 ? `${pendingChanges} mudança(s) pendente(s)` : "";
+      }
+
+      async function doLogin() {
+        const req = {
+          server: $("in-server").value.trim(),
+          port: parseInt($("in-port").value, 10) || 0,
+          user: $("in-user").value.trim(),
+          password: $("in-pass").value,
+          insecure: $("in-insecure").checked,
+        };
+        if (!req.server || !req.user) { toast("Preencha servidor e usuário."); return; }
+        $("btn-login").disabled = true;
+        try {
+          const info = await api().Login(req);
+          $("who-server").textContent = info.server;
+          $("who-user").textContent = "· " + info.user + (info.apiVersion ? " · API " + info.apiVersion : "");
+          $("in-pass").value = "";
+          $("login").classList.add("hidden");
+          $("console").classList.remove("hidden");
+          markPending(0);
+          await refresh();
+        } catch (e) {
+          toast(errText(e));
+        } finally {
+          $("btn-login").disabled = false;
+        }
+      }
+
+      async function refresh() {
+        try {
+          const hosts = (await api().ListHosts($("search").value.trim())) || [];
+          const rows = $("rows");
+          rows.innerHTML = "";
+          $("empty").classList.toggle("hidden", hosts.length > 0);
+          for (const h of hosts) {
+            const tr = document.createElement("tr");
+            const name = h["name"] || "";
+            const ip = h["ipv4-address"] || h["ipv6-address"] || "";
+            tr.innerHTML =
+              `<td>${escapeHtml(name)}</td><td>${escapeHtml(ip)}</td>` +
+              `<td class="actions"></td>`;
+            const del = document.createElement("button");
+            del.className = "ghost";
+            del.textContent = "Apagar";
+            del.onclick = () => removeHost(name);
+            tr.querySelector(".actions").appendChild(del);
+            rows.appendChild(tr);
+          }
+        } catch (e) {
+          toast(errText(e));
+        }
+      }
+
+      async function addHost() {
+        const name = $("add-name").value.trim();
+        const ip = $("add-ip").value.trim();
+        if (!name || !ip) { toast("Informe nome e IP do host."); return; }
+        try {
+          await api().AddHost(name, ip);
+          $("add-name").value = "";
+          $("add-ip").value = "";
+          markPending(1);
+          toast("Host criado (pendente de publish).", true);
+          await refresh();
+        } catch (e) {
+          toast(errText(e));
+        }
+      }
+
+      async function removeHost(name) {
+        try {
+          await api().DeleteHost(name);
+          markPending(1);
+          toast(`Host "${name}" removido (pendente de publish).`, true);
+          await refresh();
+        } catch (e) {
+          toast(errText(e));
+        }
+      }
+
+      async function publish() {
+        try {
+          await api().Publish();
+          markPending(-pendingChanges);
+          toast("Mudanças publicadas.", true);
+          await refresh();
+        } catch (e) {
+          toast(errText(e));
+        }
+      }
+
+      async function discard() {
+        try {
+          await api().Discard();
+          markPending(-pendingChanges);
+          toast("Mudanças descartadas.", true);
+          await refresh();
+        } catch (e) {
+          toast(errText(e));
+        }
+      }
+
+      async function logout() {
+        try { await api().Logout(); } catch (_) {}
+        $("console").classList.add("hidden");
+        $("login").classList.remove("hidden");
+      }
+
+      function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, (c) =>
+          ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+      }
+
+      $("btn-login").onclick = doLogin;
+      $("in-pass").addEventListener("keydown", (e) => { if (e.key === "Enter") doLogin(); });
+      $("btn-refresh").onclick = refresh;
+      $("search").addEventListener("keydown", (e) => { if (e.key === "Enter") refresh(); });
+      $("btn-add").onclick = addHost;
+      $("btn-publish").onclick = publish;
+      $("btn-discard").onclick = discard;
+      $("btn-logout").onclick = logout;
+    </script>
+  </body>
+</html>

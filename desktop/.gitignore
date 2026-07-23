@@ -1,0 +1,7 @@
+# Wails / frontend build artifacts
+/build/bin/
+/frontend/node_modules/
+/frontend/wailsjs/
+
+# Go
+*.test
