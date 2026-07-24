@@ -116,21 +116,22 @@ func newRuleDeleteCmd() *cobra.Command {
 	var name, uid, layer string
 	cmd := &cobra.Command{
 		Use:   "delete",
-		Short: "Apaga uma regra (por --uid, ou --name + --layer)",
+		Short: "Apaga uma regra (--uid + --layer, ou --name + --layer)",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if layer == "" {
+				return fmt.Errorf(`--layer é obrigatório (delete-access-rule exige a camada mesmo com --uid)`)
+			}
 			payload, err := nameOrUIDPayload(name, uid)
 			if err != nil {
 				return err
 			}
-			if uid == "" && layer != "" {
-				payload["layer"] = layer
-			}
+			payload["layer"] = layer
 			return callAndPrint("delete-access-rule", payload, true, true)
 		},
 	}
 	cmd.Flags().StringVar(&name, "name", "", "Nome da regra")
 	cmd.Flags().StringVar(&uid, "uid", "", "UID da regra")
-	cmd.Flags().StringVar(&layer, "layer", "", "Camada da regra (obrigatório se identificar por --name)")
+	cmd.Flags().StringVar(&layer, "layer", "", "Camada da regra (obrigatório)")
 	return cmd
 }
 

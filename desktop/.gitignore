@@ -2,6 +2,14 @@
 /build/bin/
 /frontend/node_modules/
 /frontend/wailsjs/
+/frontend/package.json.md5
+
+# frontend/dist is Vite's build output, embedded via //go:embed in main.go.
+# Keep a tracked placeholder so a fresh checkout still has a non-empty dist/
+# (an empty dir makes the go:embed directive fail to compile).
+/frontend/dist/*
+!/frontend/dist/.gitkeep
 
 # Go
 *.test
+/desktop
