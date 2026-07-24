@@ -2,11 +2,12 @@
   "$schema": "https://wails.io/schemas/config.v2.json",
   "name": "cpcli-desktop",
   "outputfilename": "cpcli-desktop",
-  "frontend:install": "",
-  "frontend:build": "",
-  "frontend:dev:watcher": "",
+  "frontend:install": "npm install",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
   "frontend:dir": "frontend",
-  "wailsjsdir": "./frontend/wailsjs",
+  "wailsjsdir": "./frontend",
   "info": {
     "productName": "cpcli desktop",
     "comments": "Cliente desktop (Wails) para o Check Point Management API"
