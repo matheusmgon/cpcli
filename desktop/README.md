@@ -91,6 +91,17 @@ layers, `@property`, `color-mix()`) que exigem WebKitGTK ~2.42+ (webkit2gtk-4.1
 em distros recentes). Distros muito antigas com webkit2gtk-4.0 (ex: Ubuntu
 22.04, WebKitGTK ~2.36) podem renderizar o tema quebrado.
 
+## Segurança (npm audit)
+
+`npm audit` acusa 1 advisory de severidade alta em `react-router`/`react-router-dom`
+(GHSA-qwww-vcr4-c8h2, CSRF bypass em **modo RSC**). Não se aplica aqui — este é
+um app client-side puro (Vite SPA num webview, `HashRouter`, sem framework
+mode/SSR/server actions), que é exatamente o modo que não é afetado. Não há
+correção publicada ainda dentro da faixa (ships na 8.3.0, ainda não lançada);
+versões mais antigas (`<7.12.0`) evitam esse advisory mas reintroduzem 4
+outros (open redirect XSS, injeção via SSR hydration, DoS de rota) já
+corrigidos nas versões atuais — por isso a escolha é ficar na mais recente.
+
 ## Estado
 
 Cobre a superfície completa do `cpcli/service` hoje: login, dashboard de
