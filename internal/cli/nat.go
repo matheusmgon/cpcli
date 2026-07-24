@@ -113,23 +113,25 @@ func newNatDeleteCmd() *cobra.Command {
 	var uid, pkg, ruleNumber string
 	cmd := &cobra.Command{
 		Use:   "delete",
-		Short: "Apaga uma regra de NAT (por --uid, ou --package + --rule-number)",
+		Short: "Apaga uma regra de NAT (--package obrigatório; --uid ou --rule-number)",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			payload := map[string]interface{}{}
+			if pkg == "" {
+				return fmt.Errorf("--package é obrigatório (delete-nat-rule exige o pacote mesmo com --uid)")
+			}
+			payload := map[string]interface{}{"package": pkg}
 			if uid != "" {
 				payload["uid"] = uid
 			} else {
-				if pkg == "" || ruleNumber == "" {
-					return fmt.Errorf("informe --uid, ou --package + --rule-number")
+				if ruleNumber == "" {
+					return fmt.Errorf("informe --uid, ou --rule-number")
 				}
-				payload["package"] = pkg
 				payload["rule-number"] = ruleNumber
 			}
 			return callAndPrint("delete-nat-rule", payload, true, true)
 		},
 	}
 	cmd.Flags().StringVar(&uid, "uid", "", "UID da regra")
-	cmd.Flags().StringVar(&pkg, "package", "", "Nome/UID do pacote de política")
+	cmd.Flags().StringVar(&pkg, "package", "", "Nome/UID do pacote de política (obrigatório)")
 	cmd.Flags().StringVar(&ruleNumber, "rule-number", "", "Número da regra dentro do pacote")
 	return cmd
 }
