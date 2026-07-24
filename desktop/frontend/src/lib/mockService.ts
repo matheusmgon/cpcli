@@ -95,7 +95,14 @@ const httpsRulebase: JsonRecord[] = [
 const gatewayInterfaces: Record<string, JsonRecord[]> = {
   "gw-fw01": [
     { name: "eth0", "ipv4-address": "192.168.0.200", "ipv4-mask-length": 24, "anti-spoofing": false, topology: "automatic" },
-    { name: "eth1", "ipv4-address": "10.10.1.1", "ipv4-mask-length": 24, "anti-spoofing": true, topology: "internal" },
+    {
+      name: "eth1",
+      "ipv4-address": "10.10.1.1",
+      "ipv4-mask-length": 24,
+      "anti-spoofing": true,
+      topology: "internal",
+      "anti-spoofing-settings": { action: "prevent", "spoof-tracking": "log", "exclude-packets": false },
+    },
   ],
 };
 

@@ -14,6 +14,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { getService, type JsonRecord } from "@/lib/wailsService";
@@ -23,11 +30,28 @@ function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+/** Check Point's standard terms for these two enums (same wording
+ * SmartConsole itself uses). */
+const SPOOF_ACTIONS = ["prevent", "detect"] as const;
+const SPOOF_TRACKING = ["none", "log", "alert"] as const;
+
+interface AntiSpoofingSettings {
+  action?: string;
+  "spoof-tracking"?: string;
+  "exclude-packets"?: boolean;
+}
+
 /** Interfaces dialog for a single gateway — lists interfaces and lets the
- * user toggle anti-spoofing per interface. The Go backend
- * (`internal/mgmt/gateway.go` → `MergeGatewayInterface`, called from
- * `SetGatewayInterface`) preserves the other interfaces on write, so this
- * only ever sends the single changed field for the single interface. */
+ * user toggle anti-spoofing and its advanced settings (action, spoof
+ * tracking) per interface. The Go backend (`internal/mgmt/gateway.go` →
+ * `MergeGatewayInterface`, called from `SetGatewayInterface`) preserves the
+ * other interfaces on write.
+ *
+ * `anti-spoofing-settings` itself is a nested object the API replaces
+ * wholesale rather than deep-merging (same footgun as the interfaces array
+ * one level up) — so every write sends the complete settings object, built
+ * from the interface's current values plus the one field being changed,
+ * never just the delta. */
 function InterfacesDialog({
   gateway,
   open,
@@ -46,9 +70,9 @@ function InterfacesDialog({
     enabled: open && Boolean(gateway),
   });
 
-  const toggleMutation = useMutation({
-    mutationFn: ({ ifaceName, antiSpoofing }: { ifaceName: string; antiSpoofing: boolean }) =>
-      getService().setGatewayInterface(gateway ?? "", ifaceName, { "anti-spoofing": antiSpoofing }),
+  const updateMutation = useMutation({
+    mutationFn: ({ ifaceName, fields }: { ifaceName: string; fields: JsonRecord }) =>
+      getService().setGatewayInterface(gateway ?? "", ifaceName, fields),
     onSuccess: () => {
       toast.success("Interface atualizada");
       queryClient.invalidateQueries({ queryKey });
@@ -57,48 +81,109 @@ function InterfacesDialog({
     onError: (error) => toast.error(`Falha ao atualizar interface: ${getErrorMessage(error)}`),
   });
 
+  function toggleAntiSpoofing(ifaceName: string, checked: boolean) {
+    updateMutation.mutate({ ifaceName, fields: { "anti-spoofing": checked } });
+  }
+
+  function updateSpoofSetting(
+    ifaceName: string,
+    current: AntiSpoofingSettings,
+    patch: Partial<AntiSpoofingSettings>,
+  ) {
+    const settings: AntiSpoofingSettings = {
+      action: current.action ?? "prevent",
+      "spoof-tracking": current["spoof-tracking"] ?? "log",
+      "exclude-packets": current["exclude-packets"] ?? false,
+      ...patch,
+    };
+    updateMutation.mutate({ ifaceName, fields: { "anti-spoofing-settings": settings } });
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Interfaces — {gateway}</DialogTitle>
-          <DialogDescription>Ative ou desative o anti-spoofing por interface.</DialogDescription>
+          <DialogDescription>
+            Ative o anti-spoofing por interface e ajuste ação/rastreamento. Interfaces sem IP
+            configurado no Gaia (estado "off") não aparecem aqui — isso se resolve na própria
+            appliance (clish/WebUI do Gaia), não pela Management API.
+          </DialogDescription>
         </DialogHeader>
 
         {data.length === 0 ? (
-          <EmptyState
-            title={isLoading ? "Carregando..." : "Nenhuma interface encontrada"}
-          />
+          <EmptyState title={isLoading ? "Carregando..." : "Nenhuma interface encontrada"} />
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Nome</TableHead>
                 <TableHead>IP</TableHead>
-                <TableHead>Topologia</TableHead>
-                <TableHead className="text-right">Anti-spoofing</TableHead>
+                <TableHead>Anti-spoofing</TableHead>
+                <TableHead>Ação</TableHead>
+                <TableHead>Rastreamento</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {data.map((iface, idx) => {
                 const ifaceName = typeof iface.name === "string" ? iface.name : String(idx);
                 const checked = iface["anti-spoofing"] === true;
+                const settings = (iface["anti-spoofing-settings"] as AntiSpoofingSettings) ?? {};
+                const action = settings.action ?? "prevent";
+                const tracking = settings["spoof-tracking"] ?? "log";
                 return (
                   <TableRow key={ifaceName}>
                     <TableCell>{ifaceName}</TableCell>
                     <TableCell>{String(iface["ipv4-address"] ?? "")}</TableCell>
-                    <TableCell>{String(iface.topology ?? "")}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell>
                       <input
                         type="checkbox"
                         checked={checked}
-                        disabled={toggleMutation.isPending}
-                        onChange={(e) =>
-                          toggleMutation.mutate({ ifaceName, antiSpoofing: e.target.checked })
-                        }
+                        disabled={updateMutation.isPending}
+                        onChange={(e) => toggleAntiSpoofing(ifaceName, e.target.checked)}
                         className="size-4 rounded border-border accent-accent"
                         aria-label={`Anti-spoofing em ${ifaceName}`}
                       />
+                    </TableCell>
+                    <TableCell>
+                      <Select
+                        value={action}
+                        disabled={!checked || updateMutation.isPending}
+                        onValueChange={(value) =>
+                          updateSpoofSetting(ifaceName, settings, { action: value })
+                        }
+                      >
+                        <SelectTrigger className="h-8 w-28">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SPOOF_ACTIONS.map((a) => (
+                            <SelectItem key={a} value={a}>
+                              {a}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <Select
+                        value={tracking}
+                        disabled={!checked || updateMutation.isPending}
+                        onValueChange={(value) =>
+                          updateSpoofSetting(ifaceName, settings, { "spoof-tracking": value })
+                        }
+                      >
+                        <SelectTrigger className="h-8 w-28">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SPOOF_TRACKING.map((t) => (
+                            <SelectItem key={t} value={t}>
+                              {t}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                   </TableRow>
                 );
