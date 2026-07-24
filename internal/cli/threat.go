@@ -156,7 +156,7 @@ func newThreatRuleListCmd() *cobra.Command {
 				return fmt.Errorf("--layer é obrigatório")
 			}
 			payload := map[string]interface{}{"name": layer}
-			return listAndPrint("show-threat-rulebase", detailsLevel, "rulebase", payload)
+			return listRulebaseAndPrint("show-threat-rulebase", detailsLevel, "rulebase", payload)
 		},
 	}
 	cmd.Flags().StringVar(&layer, "layer", "", "Nome/UID da camada (obrigatório)")

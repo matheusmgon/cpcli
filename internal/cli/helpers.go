@@ -100,6 +100,23 @@ func listAndPrint(command, detailsLevel, containerKey string, payload map[string
 	return printJSON(items)
 }
 
+// listRulebaseAndPrint is listAndPrint's counterpart for rulebase commands
+// (show-access-rulebase, show-nat-rulebase, show-threat-rulebase,
+// show-https-rulebase): it resolves action/source/destination/service/etc.
+// UIDs to display names via mgmt.Client.ListRulebase, instead of printing
+// raw UIDs like a plain List would.
+func listRulebaseAndPrint(command, detailsLevel, containerKey string, payload map[string]interface{}) error {
+	client, _, err := clientFromSession()
+	if err != nil {
+		return err
+	}
+	items, err := client.ListRulebase(command, detailsLevel, containerKey, payload)
+	if err != nil {
+		return err
+	}
+	return printJSON(items)
+}
+
 // parseFields turns repeated --field key=value flags into a JSON payload.
 // A value that parses as valid JSON (numbers, booleans, arrays, objects) is
 // kept as that type; anything else is kept as a plain string.

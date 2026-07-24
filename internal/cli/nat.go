@@ -146,7 +146,7 @@ func newNatListCmd() *cobra.Command {
 				return fmt.Errorf("--package é obrigatório")
 			}
 			payload := map[string]interface{}{"package": pkg}
-			return listAndPrint("show-nat-rulebase", detailsLevel, "rulebase", payload)
+			return listRulebaseAndPrint("show-nat-rulebase", detailsLevel, "rulebase", payload)
 		},
 	}
 	cmd.Flags().StringVar(&pkg, "package", "", "Nome/UID do pacote de política (obrigatório)")

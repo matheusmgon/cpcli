@@ -25,6 +25,7 @@ var ErrNotConnected = errors.New("não conectado — faça login primeiro")
 type apiClient interface {
 	Call(command string, payload map[string]interface{}, waitForTask bool) (map[string]interface{}, error)
 	List(command, detailsLevel, containerKey string, payload map[string]interface{}) ([]interface{}, error)
+	ListRulebase(command, detailsLevel, containerKey string, payload map[string]interface{}) ([]interface{}, error)
 	Logout() error
 }
 
@@ -242,12 +243,12 @@ func (s *Service) ListAccessLayers() ([]map[string]interface{}, error) {
 
 // ListAccessRulebase returns the rules of one Access Control layer.
 func (s *Service) ListAccessRulebase(layer string) ([]map[string]interface{}, error) {
-	return s.listSimple("show-access-rulebase", "rulebase", map[string]interface{}{"name": layer})
+	return s.listRulebase("show-access-rulebase", "rulebase", map[string]interface{}{"name": layer})
 }
 
 // ListNatRulebase returns the NAT rules of one policy package.
 func (s *Service) ListNatRulebase(pkg string) ([]map[string]interface{}, error) {
-	return s.listSimple("show-nat-rulebase", "rulebase", map[string]interface{}{"package": pkg})
+	return s.listRulebase("show-nat-rulebase", "rulebase", map[string]interface{}{"package": pkg})
 }
 
 // --- Policy / gateways -------------------------------------------------------
@@ -361,7 +362,7 @@ func (s *Service) ListThreatLayers() ([]map[string]interface{}, error) {
 
 // ListThreatRulebase returns the rules of one Threat Prevention layer.
 func (s *Service) ListThreatRulebase(layer string) ([]map[string]interface{}, error) {
-	return s.listSimple("show-threat-rulebase", "rulebase", map[string]interface{}{"name": layer})
+	return s.listRulebase("show-threat-rulebase", "rulebase", map[string]interface{}{"name": layer})
 }
 
 // AddThreatRule creates a rule in the given Threat Prevention layer. fields
@@ -444,7 +445,7 @@ func (s *Service) ListHttpsLayers() ([]map[string]interface{}, error) {
 
 // ListHttpsRulebase returns the rules of one HTTPS Inspection layer.
 func (s *Service) ListHttpsRulebase(layer string) ([]map[string]interface{}, error) {
-	return s.listSimple("show-https-rulebase", "rulebase", map[string]interface{}{"name": layer})
+	return s.listRulebase("show-https-rulebase", "rulebase", map[string]interface{}{"name": layer})
 }
 
 // AddHttpsRule creates a rule in the given HTTPS Inspection layer.
@@ -645,6 +646,24 @@ func (s *Service) listSimple(command, containerKey string, payload map[string]in
 		return nil, err
 	}
 	items, err := c.List(command, "standard", containerKey, payload)
+	if err != nil {
+		return nil, err
+	}
+	return toMaps(items), nil
+}
+
+// listRulebase is listSimple's counterpart for rulebase commands: it
+// resolves action/source/destination/service/etc. UIDs to display names
+// (via mgmt.Client.ListRulebase's "objects-dictionary" lookup) instead of
+// returning raw UIDs for those fields — confirmed against a live server
+// that rulebase rows never include them pre-resolved, even at
+// details-level=full.
+func (s *Service) listRulebase(command, containerKey string, payload map[string]interface{}) ([]map[string]interface{}, error) {
+	c, err := s.conn()
+	if err != nil {
+		return nil, err
+	}
+	items, err := c.ListRulebase(command, "standard", containerKey, payload)
 	if err != nil {
 		return nil, err
 	}

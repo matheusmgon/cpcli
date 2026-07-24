@@ -160,7 +160,7 @@ func newHTTPSRuleListCmd() *cobra.Command {
 				return fmt.Errorf("--layer é obrigatório")
 			}
 			payload := map[string]interface{}{"name": layer}
-			return listAndPrint("show-https-rulebase", detailsLevel, "rulebase", payload)
+			return listRulebaseAndPrint("show-https-rulebase", detailsLevel, "rulebase", payload)
 		},
 	}
 	cmd.Flags().StringVar(&layer, "layer", "", "Nome/UID da camada (obrigatório)")

@@ -39,6 +39,10 @@ func (f *fakeClient) List(command, detailsLevel, containerKey string, payload ma
 	return f.listItems, f.listErr
 }
 
+func (f *fakeClient) ListRulebase(command, detailsLevel, containerKey string, payload map[string]interface{}) ([]interface{}, error) {
+	return f.List(command, detailsLevel, containerKey, payload)
+}
+
 func (f *fakeClient) Logout() error {
 	f.loggedOut = true
 	return f.logoutErr

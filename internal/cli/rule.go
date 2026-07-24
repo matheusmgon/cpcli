@@ -145,7 +145,7 @@ func newRuleListCmd() *cobra.Command {
 				return fmt.Errorf("--layer é obrigatório")
 			}
 			payload := map[string]interface{}{"name": layer}
-			return listAndPrint("show-access-rulebase", detailsLevel, "rulebase", payload)
+			return listRulebaseAndPrint("show-access-rulebase", detailsLevel, "rulebase", payload)
 		},
 	}
 	cmd.Flags().StringVar(&layer, "layer", "", "Nome/UID da camada (obrigatório)")
