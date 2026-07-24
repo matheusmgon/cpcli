@@ -4,11 +4,13 @@ import { AppShell } from "@/components/layout/AppShell";
 import { AccessRulesPage } from "@/pages/AccessRulesPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { GatewaysPage } from "@/pages/GatewaysPage";
+import { HttpsInspectionPage } from "@/pages/HttpsInspectionPage";
 import { InstallPolicyPage } from "@/pages/InstallPolicyPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { NatPage } from "@/pages/NatPage";
 import { ObjectsPage } from "@/pages/ObjectsPage";
 import { PackagesPage } from "@/pages/PackagesPage";
+import { ThreatPreventionPage } from "@/pages/ThreatPreventionPage";
 import { VpnPage } from "@/pages/VpnPage";
 
 /** Route table — /login lives outside AppShell; every other route is a
@@ -24,6 +26,8 @@ export default function App() {
         <Route path="/objects/:kind" element={<ObjectsPage />} />
         <Route path="/access-rules" element={<AccessRulesPage />} />
         <Route path="/nat" element={<NatPage />} />
+        <Route path="/threat-prevention" element={<ThreatPreventionPage />} />
+        <Route path="/https-inspection" element={<HttpsInspectionPage />} />
         <Route path="/vpn/:kind" element={<VpnPage />} />
         <Route path="/install-policy" element={<InstallPolicyPage />} />
         <Route path="/gateways" element={<GatewaysPage />} />

@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+
+	"cpcli/internal/mgmt"
 )
 
 // newGatewayCmd groups the gateway/server commands. Listing goes through
@@ -83,7 +85,7 @@ func newGatewayInterfaceSetCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			updated, found := mergeInterfaceFields(ifaces, iface, extra)
+			updated, found := mgmt.MergeGatewayInterface(ifaces, iface, extra)
 			if !found {
 				return fmt.Errorf("interface %q não encontrada no gateway %q", iface, gateway)
 			}
@@ -116,44 +118,6 @@ func fetchGatewayInterfaces(gateway string) ([]interface{}, error) {
 	}
 	ifaces, _ := data["interfaces"].([]interface{})
 	return ifaces, nil
-}
-
-// interfaceReadOnlyFields are computed/display fields show-simple-gateway
-// includes on every interface entry but set-simple-gateway rejects
-// (generic_err_invalid_parameter_name) if they're sent back unchanged —
-// confirmed against a live Management Server.
-var interfaceReadOnlyFields = []string{"icon", "color", "uid", "network-interface-type", "topology-automatic-calculation"}
-
-// mergeInterfaceFields returns a copy of ifaces with `fields` merged into the
-// entry named ifaceName, leaving every other interface (and every other
-// field of the target one) untouched — every entry has its read-only fields
-// stripped, since the whole array is resent to set-simple-gateway. The bool
-// reports whether ifaceName was found.
-func mergeInterfaceFields(ifaces []interface{}, ifaceName string, fields map[string]interface{}) ([]interface{}, bool) {
-	updated := make([]interface{}, len(ifaces))
-	found := false
-	for i, raw := range ifaces {
-		entry, ok := raw.(map[string]interface{})
-		if !ok {
-			updated[i] = raw
-			continue
-		}
-		clean := make(map[string]interface{}, len(entry))
-		for k, v := range entry {
-			clean[k] = v
-		}
-		for _, f := range interfaceReadOnlyFields {
-			delete(clean, f)
-		}
-		if entry["name"] == ifaceName {
-			found = true
-			for k, v := range fields {
-				clean[k] = v
-			}
-		}
-		updated[i] = clean
-	}
-	return updated, found
 }
 
 func newGatewayListCmd() *cobra.Command {

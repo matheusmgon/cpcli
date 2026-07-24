@@ -48,6 +48,25 @@ export interface CpService {
   addNatRule(pkg: string, fields: JsonRecord): Promise<JsonRecord>;
   setNatRule(pkg: string, uid: string, fields: JsonRecord): Promise<JsonRecord>;
   deleteNatRule(pkg: string, uid: string): Promise<void>;
+  // Threat Prevention
+  listThreatLayers(): Promise<JsonRecord[]>;
+  listThreatRulebase(layer: string): Promise<JsonRecord[]>;
+  addThreatRule(layer: string, fields: JsonRecord): Promise<JsonRecord>;
+  setThreatRule(layer: string, uid: string, fields: JsonRecord): Promise<JsonRecord>;
+  deleteThreatRule(layer: string, uid: string): Promise<void>;
+  listThreatProfiles(): Promise<JsonRecord[]>;
+  addThreatProfile(fields: JsonRecord): Promise<JsonRecord>;
+  setThreatProfile(fields: JsonRecord): Promise<JsonRecord>;
+  deleteThreatProfile(name: string): Promise<void>;
+  // HTTPS Inspection
+  listHttpsLayers(): Promise<JsonRecord[]>;
+  listHttpsRulebase(layer: string): Promise<JsonRecord[]>;
+  addHttpsRule(layer: string, fields: JsonRecord): Promise<JsonRecord>;
+  setHttpsRule(layer: string, uid: string, fields: JsonRecord): Promise<JsonRecord>;
+  deleteHttpsRule(layer: string, uid: string): Promise<void>;
+  // Gateway interfaces (anti-spoofing)
+  listGatewayInterfaces(gateway: string): Promise<JsonRecord[]>;
+  setGatewayInterface(gateway: string, ifaceName: string, fields: JsonRecord): Promise<JsonRecord>;
   vpnKinds(): Promise<string[]>;
   listVpnCommunities(kind: string): Promise<JsonRecord[]>;
   getVpnCommunity(kind: string, name: string): Promise<JsonRecord>;
@@ -86,6 +105,22 @@ const realService: CpService = {
   addNatRule: (pkg, fields) => Real.AddNatRule(pkg, fields),
   setNatRule: (pkg, uid, fields) => Real.SetNatRule(pkg, uid, fields),
   deleteNatRule: (pkg, uid) => Real.DeleteNatRule(pkg, uid),
+  listThreatLayers: () => Real.ListThreatLayers(),
+  listThreatRulebase: (layer) => Real.ListThreatRulebase(layer),
+  addThreatRule: (layer, fields) => Real.AddThreatRule(layer, fields),
+  setThreatRule: (layer, uid, fields) => Real.SetThreatRule(layer, uid, fields),
+  deleteThreatRule: (layer, uid) => Real.DeleteThreatRule(layer, uid),
+  listThreatProfiles: () => Real.ListThreatProfiles(),
+  addThreatProfile: (fields) => Real.AddThreatProfile(fields),
+  setThreatProfile: (fields) => Real.SetThreatProfile(fields),
+  deleteThreatProfile: (name) => Real.DeleteThreatProfile(name),
+  listHttpsLayers: () => Real.ListHttpsLayers(),
+  listHttpsRulebase: (layer) => Real.ListHttpsRulebase(layer),
+  addHttpsRule: (layer, fields) => Real.AddHttpsRule(layer, fields),
+  setHttpsRule: (layer, uid, fields) => Real.SetHttpsRule(layer, uid, fields),
+  deleteHttpsRule: (layer, uid) => Real.DeleteHttpsRule(layer, uid),
+  listGatewayInterfaces: (gateway) => Real.ListGatewayInterfaces(gateway),
+  setGatewayInterface: (gateway, ifaceName, fields) => Real.SetGatewayInterface(gateway, ifaceName, fields),
   vpnKinds: () => Real.VpnKinds(),
   listVpnCommunities: (kind) => Real.ListVpnCommunities(kind),
   getVpnCommunity: (kind, name) => Real.GetVpnCommunity(kind, name),

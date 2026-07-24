@@ -11,6 +11,8 @@ import {
   UserCog,
   ShieldCheck,
   Shuffle,
+  ShieldAlert,
+  Lock,
   Rocket,
   Star,
   Share2,
@@ -25,20 +27,47 @@ export interface NavItem {
 }
 
 export interface NavGroup {
-  /** null for the top-level, ungrouped item (Dashboard). */
+  /** null for top-level, ungrouped items (Dashboard, Gateways & Servers). */
   title: string | null;
   items: NavItem[];
 }
 
 /** Single source of truth for sidebar navigation — consumed by
- * `components/layout/Sidebar.tsx` so the route list isn't duplicated. */
+ * `components/layout/Sidebar.tsx` so the route list isn't duplicated.
+ *
+ * Structure mirrors the real SmartConsole: Access Control + NAT + Threat
+ * Prevention + HTTPS Inspection all live under one "Security Policies"
+ * concept there (with Install Policy alongside them), not as unrelated
+ * top-level items — that's the grouping that was missing before and made
+ * the sidebar feel disorganized compared to the real product. */
 export const navGroups: NavGroup[] = [
   {
     title: null,
     items: [{ label: "Dashboard", to: "/dashboard", icon: LayoutDashboard }],
   },
   {
-    title: "Objetos",
+    title: null,
+    items: [{ label: "Gateways & Servers", to: "/gateways", icon: Boxes }],
+  },
+  {
+    title: "Security Policies",
+    items: [
+      { label: "Access Control", to: "/access-rules", icon: ShieldCheck },
+      { label: "NAT", to: "/nat", icon: Shuffle },
+      { label: "Threat Prevention", to: "/threat-prevention", icon: ShieldAlert },
+      { label: "HTTPS Inspection", to: "/https-inspection", icon: Lock },
+      { label: "Instalar política", to: "/install-policy", icon: Rocket },
+    ],
+  },
+  {
+    title: "VPN Communities",
+    items: [
+      { label: "Star", to: "/vpn/star", icon: Star },
+      { label: "Meshed", to: "/vpn/meshed", icon: Share2 },
+    ],
+  },
+  {
+    title: "Object Explorer",
     items: [
       { label: "Hosts", to: "/objects/host", icon: Server },
       { label: "Networks", to: "/objects/network", icon: Network },
@@ -51,25 +80,7 @@ export const navGroups: NavGroup[] = [
     ],
   },
   {
-    title: "Política",
-    items: [
-      { label: "Access Rules", to: "/access-rules", icon: ShieldCheck },
-      { label: "NAT", to: "/nat", icon: Shuffle },
-      { label: "Instalar política", to: "/install-policy", icon: Rocket },
-    ],
-  },
-  {
-    title: "VPN",
-    items: [
-      { label: "Star", to: "/vpn/star", icon: Star },
-      { label: "Meshed", to: "/vpn/meshed", icon: Share2 },
-    ],
-  },
-  {
-    title: "Infraestrutura",
-    items: [
-      { label: "Gateways", to: "/gateways", icon: Boxes },
-      { label: "Packages", to: "/packages", icon: FolderKanban },
-    ],
+    title: "Manage",
+    items: [{ label: "Policy Packages", to: "/packages", icon: FolderKanban }],
   },
 ];

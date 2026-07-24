@@ -107,6 +107,9 @@ corrigidos nas versões atuais — por isso a escolha é ficar na mais recente.
 Cobre a superfície completa do `cpcli/service` hoje: login, dashboard de
 overview, CRUD dos 8 tipos de objeto simples (hosts, networks, groups,
 services TCP/UDP, address ranges, service groups, access roles), Access
-Control rules, NAT, VPN (star/meshed), install/verify de política, e leitura
-de gateways/packages — sempre com publish/discard explícitos, como no
-SmartConsole real.
+Control rules, NAT, Threat Prevention (regras + profiles), HTTPS Inspection,
+VPN (star/meshed), install/verify de política, leitura de gateways/packages,
+e anti-spoofing por interface de gateway — sempre com publish/discard
+explícitos, como no SmartConsole real. A sidebar segue a mesma agrupação do
+SmartConsole (Access Control + NAT + Threat Prevention + HTTPS Inspection sob
+"Security Policies", em vez de itens soltos).

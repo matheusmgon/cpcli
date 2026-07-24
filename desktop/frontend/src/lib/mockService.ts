@@ -68,6 +68,37 @@ const gateways: JsonRecord[] = [{ name: "gw-fw01", type: "simple-gateway", "ipv4
 const vpnMeshed: JsonRecord[] = [{ name: "MyIntranet", gateways: [{ name: "gw-fw01" }] }];
 const vpnStar: JsonRecord[] = [];
 
+const threatLayer = { name: "Standard Threat Prevention", uid: "threat-layer-mock-1", type: "threat-layer" };
+const threatRulebase: JsonRecord[] = [
+  {
+    "rule-number": 1,
+    uid: "threat-rule-mock-1",
+    name: "Perfil padrão",
+    action: { name: "Optimized" },
+    "protected-scope": [{ name: "Any" }],
+  },
+];
+const threatProfiles: JsonRecord[] = [{ name: "Optimized", uid: "threat-profile-mock-1" }];
+
+const httpsLayer = { name: "Default Layer", uid: "https-layer-mock-1", type: "https-layer" };
+const httpsRulebase: JsonRecord[] = [
+  {
+    "rule-number": 1,
+    uid: "https-rule-mock-1",
+    name: "Inspecionar tudo",
+    action: "Inspect",
+    source: [{ name: "Any" }],
+    destination: [{ name: "Any" }],
+  },
+];
+
+const gatewayInterfaces: Record<string, JsonRecord[]> = {
+  "gw-fw01": [
+    { name: "eth0", "ipv4-address": "192.168.0.200", "ipv4-mask-length": 24, "anti-spoofing": false, topology: "automatic" },
+    { name: "eth1", "ipv4-address": "10.10.1.1", "ipv4-mask-length": 24, "anti-spoofing": true, topology: "internal" },
+  ],
+};
+
 function requireSession() {
   if (!session.connected) throw new Error("não conectado — faça login primeiro");
 }
@@ -181,6 +212,103 @@ export const mockService: CpService = {
     const idx = natRulebase.findIndex((r) => r.uid === uid);
     if (idx >= 0) natRulebase.splice(idx, 1);
     pending++;
+  },
+  async listThreatLayers() {
+    requireSession();
+    return delay([threatLayer]);
+  },
+  async listThreatRulebase() {
+    requireSession();
+    return delay(threatRulebase);
+  },
+  async addThreatRule(_layer, fields) {
+    requireSession();
+    threatRulebase.unshift({
+      ...fields,
+      uid: `threat-rule-mock-${threatRulebase.length + 1}`,
+      "rule-number": threatRulebase.length + 1,
+    });
+    pending++;
+    return delay(fields);
+  },
+  async setThreatRule(_layer, uid, fields) {
+    requireSession();
+    const idx = threatRulebase.findIndex((r) => r.uid === uid);
+    if (idx >= 0) threatRulebase[idx] = { ...threatRulebase[idx], ...fields };
+    pending++;
+    return delay(fields);
+  },
+  async deleteThreatRule(_layer, uid) {
+    requireSession();
+    const idx = threatRulebase.findIndex((r) => r.uid === uid);
+    if (idx >= 0) threatRulebase.splice(idx, 1);
+    pending++;
+  },
+  async listThreatProfiles() {
+    requireSession();
+    return delay(threatProfiles);
+  },
+  async addThreatProfile(fields) {
+    requireSession();
+    threatProfiles.push({ ...fields, uid: `threat-profile-mock-${threatProfiles.length + 1}` });
+    pending++;
+    return delay(fields);
+  },
+  async setThreatProfile(fields) {
+    requireSession();
+    const idx = threatProfiles.findIndex((r) => r.name === fields.name);
+    if (idx >= 0) threatProfiles[idx] = { ...threatProfiles[idx], ...fields };
+    pending++;
+    return delay(fields);
+  },
+  async deleteThreatProfile(name) {
+    requireSession();
+    const idx = threatProfiles.findIndex((r) => r.name === name);
+    if (idx >= 0) threatProfiles.splice(idx, 1);
+    pending++;
+  },
+  async listHttpsLayers() {
+    requireSession();
+    return delay([httpsLayer]);
+  },
+  async listHttpsRulebase() {
+    requireSession();
+    return delay(httpsRulebase);
+  },
+  async addHttpsRule(_layer, fields) {
+    requireSession();
+    httpsRulebase.unshift({
+      ...fields,
+      uid: `https-rule-mock-${httpsRulebase.length + 1}`,
+      "rule-number": httpsRulebase.length + 1,
+    });
+    pending++;
+    return delay(fields);
+  },
+  async setHttpsRule(_layer, uid, fields) {
+    requireSession();
+    const idx = httpsRulebase.findIndex((r) => r.uid === uid);
+    if (idx >= 0) httpsRulebase[idx] = { ...httpsRulebase[idx], ...fields };
+    pending++;
+    return delay(fields);
+  },
+  async deleteHttpsRule(_layer, uid) {
+    requireSession();
+    const idx = httpsRulebase.findIndex((r) => r.uid === uid);
+    if (idx >= 0) httpsRulebase.splice(idx, 1);
+    pending++;
+  },
+  async listGatewayInterfaces(gateway) {
+    requireSession();
+    return delay(gatewayInterfaces[gateway] ?? []);
+  },
+  async setGatewayInterface(gateway, ifaceName, fields) {
+    requireSession();
+    const ifaces = gatewayInterfaces[gateway] ?? [];
+    const idx = ifaces.findIndex((i) => i.name === ifaceName);
+    if (idx >= 0) ifaces[idx] = { ...ifaces[idx], ...fields };
+    pending++;
+    return delay(fields);
   },
   async vpnKinds() {
     return delay(["star", "meshed"]);

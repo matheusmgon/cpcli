@@ -352,6 +352,186 @@ func (s *Service) DeleteNatRule(pkg, uid string) error {
 	return err
 }
 
+// --- Threat Prevention (rules + profiles) -------------------------------------
+
+// ListThreatLayers returns the Threat Prevention layers.
+func (s *Service) ListThreatLayers() ([]map[string]interface{}, error) {
+	return s.listSimple("show-threat-layers", "threat-layers", map[string]interface{}{})
+}
+
+// ListThreatRulebase returns the rules of one Threat Prevention layer.
+func (s *Service) ListThreatRulebase(layer string) ([]map[string]interface{}, error) {
+	return s.listSimple("show-threat-rulebase", "rulebase", map[string]interface{}{"name": layer})
+}
+
+// AddThreatRule creates a rule in the given Threat Prevention layer. fields
+// carries the API body (name is required by the API, plus action,
+// protected-scope, position, …).
+func (s *Service) AddThreatRule(layer string, fields map[string]interface{}) (map[string]interface{}, error) {
+	c, err := s.conn()
+	if err != nil {
+		return nil, err
+	}
+	p := cloneFields(fields)
+	p["layer"] = layer
+	return c.Call("add-threat-rule", p, true)
+}
+
+// SetThreatRule updates the rule identified by uid in the given layer.
+// show/set/delete-threat-rule all require "layer" even when the rule is
+// identified by uid — confirmed against a live Management Server.
+func (s *Service) SetThreatRule(layer, uid string, fields map[string]interface{}) (map[string]interface{}, error) {
+	c, err := s.conn()
+	if err != nil {
+		return nil, err
+	}
+	p := cloneFields(fields)
+	p["layer"] = layer
+	p["uid"] = uid
+	return c.Call("set-threat-rule", p, true)
+}
+
+// DeleteThreatRule removes the rule identified by uid in the given layer.
+func (s *Service) DeleteThreatRule(layer, uid string) error {
+	c, err := s.conn()
+	if err != nil {
+		return err
+	}
+	_, err = c.Call("delete-threat-rule", map[string]interface{}{"layer": layer, "uid": uid}, true)
+	return err
+}
+
+// ListThreatProfiles returns the Threat Prevention profiles.
+func (s *Service) ListThreatProfiles() ([]map[string]interface{}, error) {
+	return s.listSimple("show-threat-profiles", "objects", map[string]interface{}{})
+}
+
+// AddThreatProfile creates a Threat Prevention profile.
+func (s *Service) AddThreatProfile(fields map[string]interface{}) (map[string]interface{}, error) {
+	c, err := s.conn()
+	if err != nil {
+		return nil, err
+	}
+	return c.Call("add-threat-profile", cloneFields(fields), true)
+}
+
+// SetThreatProfile updates an existing Threat Prevention profile. fields
+// must identify the profile (by "name" or "uid") plus the fields to change.
+func (s *Service) SetThreatProfile(fields map[string]interface{}) (map[string]interface{}, error) {
+	c, err := s.conn()
+	if err != nil {
+		return nil, err
+	}
+	return c.Call("set-threat-profile", cloneFields(fields), true)
+}
+
+// DeleteThreatProfile removes a Threat Prevention profile by name.
+func (s *Service) DeleteThreatProfile(name string) error {
+	c, err := s.conn()
+	if err != nil {
+		return err
+	}
+	_, err = c.Call("delete-threat-profile", map[string]interface{}{"name": name}, true)
+	return err
+}
+
+// --- HTTPS Inspection ----------------------------------------------------------
+
+// ListHttpsLayers returns the HTTPS Inspection layers.
+func (s *Service) ListHttpsLayers() ([]map[string]interface{}, error) {
+	return s.listSimple("show-https-layers", "https-layers", map[string]interface{}{})
+}
+
+// ListHttpsRulebase returns the rules of one HTTPS Inspection layer.
+func (s *Service) ListHttpsRulebase(layer string) ([]map[string]interface{}, error) {
+	return s.listSimple("show-https-rulebase", "rulebase", map[string]interface{}{"name": layer})
+}
+
+// AddHttpsRule creates a rule in the given HTTPS Inspection layer.
+func (s *Service) AddHttpsRule(layer string, fields map[string]interface{}) (map[string]interface{}, error) {
+	c, err := s.conn()
+	if err != nil {
+		return nil, err
+	}
+	p := cloneFields(fields)
+	p["layer"] = layer
+	return c.Call("add-https-rule", p, true)
+}
+
+// SetHttpsRule updates the rule identified by uid in the given layer.
+// show/set/delete-https-rule all require "layer" even when the rule is
+// identified by uid — confirmed against a live Management Server.
+func (s *Service) SetHttpsRule(layer, uid string, fields map[string]interface{}) (map[string]interface{}, error) {
+	c, err := s.conn()
+	if err != nil {
+		return nil, err
+	}
+	p := cloneFields(fields)
+	p["layer"] = layer
+	p["uid"] = uid
+	return c.Call("set-https-rule", p, true)
+}
+
+// DeleteHttpsRule removes the rule identified by uid in the given layer.
+func (s *Service) DeleteHttpsRule(layer, uid string) error {
+	c, err := s.conn()
+	if err != nil {
+		return err
+	}
+	_, err = c.Call("delete-https-rule", map[string]interface{}{"layer": layer, "uid": uid}, true)
+	return err
+}
+
+// --- Gateway interfaces (topology / anti-spoofing) ----------------------------
+
+// ListGatewayInterfaces returns the interfaces of a simple-gateway (IP,
+// anti-spoofing, topology settings).
+func (s *Service) ListGatewayInterfaces(gateway string) ([]map[string]interface{}, error) {
+	c, err := s.conn()
+	if err != nil {
+		return nil, err
+	}
+	data, err := c.Call("show-simple-gateway", map[string]interface{}{
+		"name":          gateway,
+		"details-level": "full",
+	}, false)
+	if err != nil {
+		return nil, err
+	}
+	ifaces, _ := data["interfaces"].([]interface{})
+	return toMaps(ifaces), nil
+}
+
+// SetGatewayInterface changes fields (e.g. "anti-spoofing") on one named
+// interface of a gateway. set-simple-gateway replaces the WHOLE
+// "interfaces" array rather than patching a single entry — sending back
+// only the changed interface silently deletes every other one on the
+// gateway (confirmed against a live Management Server). So this reads the
+// current interfaces first and sends the complete, merged array back via
+// mgmt.MergeGatewayInterface (shared with the CLI's "gateway interface set").
+func (s *Service) SetGatewayInterface(gateway, ifaceName string, fields map[string]interface{}) (map[string]interface{}, error) {
+	c, err := s.conn()
+	if err != nil {
+		return nil, err
+	}
+	data, err := c.Call("show-simple-gateway", map[string]interface{}{
+		"name":          gateway,
+		"details-level": "full",
+	}, false)
+	if err != nil {
+		return nil, err
+	}
+	ifaces, _ := data["interfaces"].([]interface{})
+	updated, found := mgmt.MergeGatewayInterface(ifaces, ifaceName, fields)
+	if !found {
+		return nil, fmt.Errorf("interface %q não encontrada no gateway %q", ifaceName, gateway)
+	}
+	return c.Call("set-simple-gateway", map[string]interface{}{
+		"name":       gateway,
+		"interfaces": updated,
+	}, true)
+}
+
 // --- VPN communities ---------------------------------------------------------
 
 var vpnRegistry = map[string]objectCommands{
