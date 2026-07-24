@@ -36,6 +36,66 @@ var (
 		addCmd: "add-service-udp", showCmd: "show-service-udp", setCmd: "set-service-udp", deleteCmd: "delete-service-udp", listCmd: "show-services-udp",
 		fieldHint: "port, comments",
 	}
+	objTypeAddressRange = objectType{
+		name: "address-range", short: "Faixas de endereços (address-range)",
+		addCmd: "add-address-range", showCmd: "show-address-range", setCmd: "set-address-range", deleteCmd: "delete-address-range", listCmd: "show-address-ranges",
+		fieldHint: "ip-address-first, ip-address-last, comments, color",
+	}
+	objTypeServiceGroup = objectType{
+		name: "service-group", short: "Grupos de serviços",
+		addCmd: "add-service-group", showCmd: "show-service-group", setCmd: "set-service-group", deleteCmd: "delete-service-group", listCmd: "show-service-groups",
+		fieldHint: `members (ex: --field members='["https","ssh"]')`,
+	}
+	objTypeServiceICMP = objectType{
+		name: "service-icmp", short: "Serviços ICMP",
+		addCmd: "add-service-icmp", showCmd: "show-service-icmp", setCmd: "set-service-icmp", deleteCmd: "delete-service-icmp", listCmd: "show-services-icmp",
+		fieldHint: "icmp-type, icmp-code, comments",
+	}
+	objTypeServiceOther = objectType{
+		name: "service-other", short: "Serviços de outros protocolos IP",
+		addCmd: "add-service-other", showCmd: "show-service-other", setCmd: "set-service-other", deleteCmd: "delete-service-other", listCmd: "show-services-other",
+		fieldHint: "ip-protocol, match, comments",
+	}
+	objTypeSecurityZone = objectType{
+		name: "security-zone", short: "Zonas de segurança (security-zone)",
+		addCmd: "add-security-zone", showCmd: "show-security-zone", setCmd: "set-security-zone", deleteCmd: "delete-security-zone", listCmd: "show-security-zones",
+		fieldHint: "comments, color",
+	}
+	objTypeDNSDomain = objectType{
+		name: "dns-domain", short: "Domínios DNS (dns-domain)",
+		addCmd: "add-dns-domain", showCmd: "show-dns-domain", setCmd: "set-dns-domain", deleteCmd: "delete-dns-domain", listCmd: "show-dns-domains",
+		fieldHint: `name (ex: ".example.com"), is-sub-domain (bool)`,
+	}
+	objTypeWildcard = objectType{
+		name: "wildcard", short: "Objetos wildcard (IP + máscara curinga)",
+		addCmd: "add-wildcard", showCmd: "show-wildcard", setCmd: "set-wildcard", deleteCmd: "delete-wildcard", listCmd: "show-wildcards",
+		fieldHint: "ipv4-address, ipv4-mask-wildcard, comments",
+	}
+	objTypeTag = objectType{
+		name: "tag", short: "Tags (rótulos de objetos)",
+		addCmd: "add-tag", showCmd: "show-tag", setCmd: "set-tag", deleteCmd: "delete-tag", listCmd: "show-tags",
+		fieldHint: "comments, color",
+	}
+	objTypeTime = objectType{
+		name: "time", short: "Objetos de tempo (time)",
+		addCmd: "add-time", showCmd: "show-time", setCmd: "set-time", deleteCmd: "delete-time", listCmd: "show-times",
+		fieldHint: "start, end, recurrence (ver docs da API)",
+	}
+	objTypeDynamicObject = objectType{
+		name: "dynamic-object", short: "Objetos dinâmicos (dynamic-object)",
+		addCmd: "add-dynamic-object", showCmd: "show-dynamic-object", setCmd: "set-dynamic-object", deleteCmd: "delete-dynamic-object", listCmd: "show-dynamic-objects",
+		fieldHint: "comments, color",
+	}
+	objTypeAccessRole = objectType{
+		name: "access-role", short: "Access Roles (identidade: usuários/máquinas/redes)",
+		addCmd: "add-access-role", showCmd: "show-access-role", setCmd: "set-access-role", deleteCmd: "delete-access-role", listCmd: "show-access-roles",
+		fieldHint: `networks, users, machines (ex: --field networks='["any"]')`,
+	}
+	objTypeApplicationSite = objectType{
+		name: "application-site", short: "Aplicações/sites customizados (application-site)",
+		addCmd: "add-application-site", showCmd: "show-application-site", setCmd: "set-application-site", deleteCmd: "delete-application-site", listCmd: "show-application-sites",
+		fieldHint: "url-list, application-signature, primary-category, comments",
+	}
 )
 
 func newObjectCmd(ot objectType) *cobra.Command {
