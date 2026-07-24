@@ -55,6 +55,21 @@ const rulebase: JsonRecord[] = [
 const pkg = { name: "Standard", uid: "pkg-mock-1", access: true, "threat-prevention": true };
 const natRulebase: JsonRecord[] = [
   {
+    type: "nat-section",
+    name: "Automatic Generated Rules : Network Hide NAT",
+    uid: "nat-section-mock-1",
+    rulebase: [
+      {
+        "rule-number": 1,
+        uid: "nat-auto-mock-1",
+        "original-source": "lan-servers",
+        "original-destination": "Any",
+        "original-service": "Any",
+        method: "hide",
+      },
+    ],
+  },
+  {
     "rule-number": 1,
     uid: "nat-mock-1",
     "original-source": { name: "lan-servers" },

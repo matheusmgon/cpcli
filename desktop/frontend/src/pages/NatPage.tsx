@@ -21,9 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { EmptyState } from "@/components/shared/EmptyState";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { RulebaseTable } from "@/components/shared/RulebaseTable";
 import { getService, type JsonRecord } from "@/lib/wailsService";
 import { useSessionStore } from "@/stores/session";
 
@@ -190,54 +189,27 @@ export function NatPage() {
         </Select>
       </div>
 
-      {rows.length === 0 ? (
-        <EmptyState
-          title="Nenhuma regra NAT encontrada"
-          description={pkgName ? "Este pacote ainda não tem regras de NAT." : "Selecione um pacote para ver as regras."}
-        />
-      ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-14">#</TableHead>
-              <TableHead>Orig. origem</TableHead>
-              <TableHead>Orig. destino</TableHead>
-              <TableHead>Orig. serviço</TableHead>
-              <TableHead>Método</TableHead>
-              <TableHead className="w-16 text-right">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.map((row, idx) => {
-              if (row.type === "nat-section") {
-                return (
-                  <TableRow key={`section-${String(row.uid ?? idx)}`} className="bg-surface-2/70">
-                    <TableCell colSpan={6} className="font-medium text-muted">
-                      ▸ {typeof row.name === "string" && row.name ? row.name : "Seção"}
-                    </TableCell>
-                  </TableRow>
-                );
-              }
-
-              const uid = String(row.uid ?? idx);
-              return (
-                <TableRow key={uid}>
-                  <TableCell>{typeof row["rule-number"] === "number" ? row["rule-number"] : ""}</TableCell>
-                  <TableCell>{refName(row["original-source"])}</TableCell>
-                  <TableCell>{refName(row["original-destination"])}</TableCell>
-                  <TableCell>{refName(row["original-service"])}</TableCell>
-                  <TableCell>{refName(row.method)}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(uid)} aria-label="Remover regra NAT">
-                      <Trash2 className="size-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      )}
+      <RulebaseTable
+        rows={rows}
+        emptyMessage={pkgName ? "Este pacote ainda não tem regras de NAT." : "Selecione um pacote para ver as regras."}
+        columns={[
+          { header: "#", cell: (row) => (typeof row["rule-number"] === "number" ? String(row["rule-number"]) : "") },
+          { header: "Orig. origem", cell: (row) => refName(row["original-source"]) },
+          { header: "Orig. destino", cell: (row) => refName(row["original-destination"]) },
+          { header: "Orig. serviço", cell: (row) => refName(row["original-service"]) },
+          { header: "Método", cell: (row) => refName(row.method) },
+        ]}
+        renderActions={(row) => (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => handleDelete(String(row.uid ?? ""))}
+            aria-label="Remover regra NAT"
+          >
+            <Trash2 className="size-4" />
+          </Button>
+        )}
+      />
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>

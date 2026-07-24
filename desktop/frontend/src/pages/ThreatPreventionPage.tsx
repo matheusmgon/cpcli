@@ -22,12 +22,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DataTable } from "@/components/shared/DataTable";
-import { EmptyState } from "@/components/shared/EmptyState";
 import { EntityFormDialog } from "@/components/shared/EntityFormDialog";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { RulebaseTable } from "@/components/shared/RulebaseTable";
 import { getService, type JsonRecord } from "@/lib/wailsService";
 import { useSessionStore } from "@/stores/session";
 
@@ -225,62 +224,29 @@ function ThreatRulesTab() {
         </Button>
       </div>
 
-      {rows.length === 0 ? (
-        <EmptyState
-          title="Nenhuma regra encontrada"
-          description={layerName ? "Esta layer ainda não tem regras." : "Selecione uma layer para ver as regras."}
-        />
-      ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-14">#</TableHead>
-              <TableHead>Nome</TableHead>
-              <TableHead>Ação</TableHead>
-              <TableHead>Escopo protegido</TableHead>
-              <TableHead className="w-24 text-right">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.map((row, idx) => {
-              if (row.type === "threat-section") {
-                return (
-                  <TableRow key={`section-${String(row.uid ?? idx)}`} className="bg-surface-2/70">
-                    <TableCell colSpan={5} className="font-medium text-muted">
-                      ▸ {typeof row.name === "string" && row.name ? row.name : "Seção"}
-                    </TableCell>
-                  </TableRow>
-                );
-              }
-
-              const uid = String(row.uid ?? idx);
-              return (
-                <TableRow key={uid}>
-                  <TableCell>{typeof row["rule-number"] === "number" ? row["rule-number"] : ""}</TableCell>
-                  <TableCell>{typeof row.name === "string" ? row.name : ""}</TableCell>
-                  <TableCell>{refName(row.action)}</TableCell>
-                  <TableCell>{refName(row["protected-scope"])}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => openEditDialog(row)} aria-label="Editar regra">
-                        <Pencil className="size-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(uid)}
-                        aria-label="Remover regra"
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      )}
+      <RulebaseTable
+        rows={rows}
+        emptyMessage={layerName ? "Esta layer ainda não tem regras." : "Selecione uma layer para ver as regras."}
+        columns={[
+          { header: "#", cell: (row) => (typeof row["rule-number"] === "number" ? String(row["rule-number"]) : "") },
+          { header: "Nome", cell: (row) => (typeof row.name === "string" ? row.name : "") },
+          { header: "Ação", cell: (row) => refName(row.action) },
+          { header: "Escopo protegido", cell: (row) => refName(row["protected-scope"]) },
+        ]}
+        renderActions={(row) => {
+          const uid = String(row.uid ?? "");
+          return (
+            <div className="flex justify-end gap-1">
+              <Button variant="ghost" size="icon" onClick={() => openEditDialog(row)} aria-label="Editar regra">
+                <Pencil className="size-4" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => handleDelete(uid)} aria-label="Remover regra">
+                <Trash2 className="size-4" />
+              </Button>
+            </div>
+          );
+        }}
+      />
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>

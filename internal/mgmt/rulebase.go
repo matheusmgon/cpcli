@@ -79,14 +79,26 @@ func (c *Client) ListRulebase(command, detailsLevel, containerKey string, payloa
 }
 
 // resolveRulebaseRefs returns a copy of rows with every referenceFieldNames
-// value that's a known uid (per dictionary) replaced by its display name.
-// Rows that aren't objects (shouldn't happen, but List's containerKey
-// extraction is untyped) pass through unchanged.
+// value that's a known uid (per dictionary) replaced by its display name —
+// recursing into section rows' own nested "rulebase" array too (see
+// resolveRulebaseRefsWithIndex). Rows that aren't objects (shouldn't
+// happen, but List's containerKey extraction is untyped) pass through
+// unchanged.
 func resolveRulebaseRefs(rows []interface{}, dictionary []interface{}) []interface{} {
 	idx := buildUIDIndex(dictionary)
 	if len(idx) == 0 {
 		return rows
 	}
+	return resolveRulebaseRefsWithIndex(rows, idx)
+}
+
+// resolveRulebaseRefsWithIndex does the actual substitution, given an
+// already-built uid->name index — factored out so it can recurse into
+// section rows' nested "rulebase" array (e.g. an "Automatic Generated
+// Rules" NAT section hides its real rules there — confirmed live, a plain
+// top-level walk would never see or resolve them) without rebuilding the
+// index per section.
+func resolveRulebaseRefsWithIndex(rows []interface{}, idx map[string]string) []interface{} {
 	out := make([]interface{}, len(rows))
 	for i, raw := range rows {
 		row, ok := raw.(map[string]interface{})
@@ -96,9 +108,16 @@ func resolveRulebaseRefs(rows []interface{}, dictionary []interface{}) []interfa
 		}
 		resolved := make(map[string]interface{}, len(row))
 		for k, v := range row {
-			if referenceFieldNames[k] {
+			switch {
+			case k == "rulebase":
+				if nested, ok := v.([]interface{}); ok {
+					resolved[k] = resolveRulebaseRefsWithIndex(nested, idx)
+				} else {
+					resolved[k] = v
+				}
+			case referenceFieldNames[k]:
 				resolved[k] = substituteUIDs(v, idx)
-			} else {
+			default:
 				resolved[k] = v
 			}
 		}
