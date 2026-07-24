@@ -21,8 +21,139 @@ func newGatewayCmd() *cobra.Command {
 		newGatewayAddCmd(),
 		newGatewaySetCmd(),
 		newGatewayDeleteCmd(),
+		newGatewayInterfaceCmd(),
 	)
 	return root
+}
+
+// newGatewayInterfaceCmd manages per-interface topology settings
+// (anti-spoofing, topology) on a simple-gateway. set-simple-gateway replaces
+// the whole "interfaces" array rather than patching one entry — confirmed
+// against a live Management Server: sending a single interface silently
+// deleted every other one. So "set" always reads the gateway's current
+// interfaces first, merges the requested fields into the matching entry,
+// and sends the complete array back.
+func newGatewayInterfaceCmd() *cobra.Command {
+	root := &cobra.Command{
+		Use:   "interface",
+		Short: "Interfaces de um gateway standalone (topologia, anti-spoofing)",
+	}
+	root.AddCommand(
+		newGatewayInterfaceListCmd(),
+		newGatewayInterfaceSetCmd(),
+	)
+	return root
+}
+
+func newGatewayInterfaceListCmd() *cobra.Command {
+	var gateway string
+	cmd := &cobra.Command{
+		Use:   "list",
+		Short: "Lista as interfaces de um gateway (IP, anti-spoofing, topologia)",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if gateway == "" {
+				return fmt.Errorf("--gateway é obrigatório")
+			}
+			ifaces, err := fetchGatewayInterfaces(gateway)
+			if err != nil {
+				return err
+			}
+			return printJSON(ifaces)
+		},
+	}
+	cmd.Flags().StringVar(&gateway, "gateway", "", "Nome do gateway (obrigatório)")
+	return cmd
+}
+
+func newGatewayInterfaceSetCmd() *cobra.Command {
+	var gateway, iface string
+	var fields []string
+	cmd := &cobra.Command{
+		Use:   "set",
+		Short: "Altera uma interface do gateway (ex: --field anti-spoofing=true)",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if gateway == "" || iface == "" {
+				return fmt.Errorf("--gateway e --interface são obrigatórios")
+			}
+			extra, err := parseFields(fields)
+			if err != nil {
+				return err
+			}
+			ifaces, err := fetchGatewayInterfaces(gateway)
+			if err != nil {
+				return err
+			}
+			updated, found := mergeInterfaceFields(ifaces, iface, extra)
+			if !found {
+				return fmt.Errorf("interface %q não encontrada no gateway %q", iface, gateway)
+			}
+			return callAndPrint("set-simple-gateway", map[string]interface{}{
+				"name":       gateway,
+				"interfaces": updated,
+			}, true, true)
+		},
+	}
+	cmd.Flags().StringVar(&gateway, "gateway", "", "Nome do gateway (obrigatório)")
+	cmd.Flags().StringVar(&iface, "interface", "", `Nome da interface, ex: "eth0" (obrigatório)`)
+	cmd.Flags().StringArrayVar(&fields, "field", nil, `Campo chave=valor (ex: --field anti-spoofing=true --field topology='"external"')`)
+	return cmd
+}
+
+// fetchGatewayInterfaces returns the current "interfaces" array of a
+// simple-gateway, as-is from the API (each entry keeps every field the
+// server returned, so a later merge+set round-trips them unchanged).
+func fetchGatewayInterfaces(gateway string) ([]interface{}, error) {
+	client, _, err := clientFromSession()
+	if err != nil {
+		return nil, err
+	}
+	data, err := client.Call("show-simple-gateway", map[string]interface{}{
+		"name":          gateway,
+		"details-level": "full",
+	}, false)
+	if err != nil {
+		return nil, err
+	}
+	ifaces, _ := data["interfaces"].([]interface{})
+	return ifaces, nil
+}
+
+// interfaceReadOnlyFields are computed/display fields show-simple-gateway
+// includes on every interface entry but set-simple-gateway rejects
+// (generic_err_invalid_parameter_name) if they're sent back unchanged —
+// confirmed against a live Management Server.
+var interfaceReadOnlyFields = []string{"icon", "color", "uid", "network-interface-type", "topology-automatic-calculation"}
+
+// mergeInterfaceFields returns a copy of ifaces with `fields` merged into the
+// entry named ifaceName, leaving every other interface (and every other
+// field of the target one) untouched — every entry has its read-only fields
+// stripped, since the whole array is resent to set-simple-gateway. The bool
+// reports whether ifaceName was found.
+func mergeInterfaceFields(ifaces []interface{}, ifaceName string, fields map[string]interface{}) ([]interface{}, bool) {
+	updated := make([]interface{}, len(ifaces))
+	found := false
+	for i, raw := range ifaces {
+		entry, ok := raw.(map[string]interface{})
+		if !ok {
+			updated[i] = raw
+			continue
+		}
+		clean := make(map[string]interface{}, len(entry))
+		for k, v := range entry {
+			clean[k] = v
+		}
+		for _, f := range interfaceReadOnlyFields {
+			delete(clean, f)
+		}
+		if entry["name"] == ifaceName {
+			found = true
+			for k, v := range fields {
+				clean[k] = v
+			}
+		}
+		updated[i] = clean
+	}
+	return updated, found
 }
 
 func newGatewayListCmd() *cobra.Command {

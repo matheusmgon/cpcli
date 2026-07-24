@@ -55,6 +55,7 @@ func Execute() error {
 		newVPNCmd(),
 		newGatewayCmd(),
 		newThreatCmd(),
+		newHTTPSCmd(),
 		newSearchCmd(),
 		newRawCmd(),
 	)
