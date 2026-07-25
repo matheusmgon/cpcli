@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ObjectPicker } from "@/components/shared/ObjectPicker";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { RulebaseTable } from "@/components/shared/RulebaseTable";
 import { getService, type JsonRecord } from "@/lib/wailsService";
@@ -47,31 +48,42 @@ function refName(v: unknown): string {
   return String(v);
 }
 
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
+/** Same normalization as `refName`, but returns each object name as its own
+ * array entry instead of joining them — used to seed `ObjectPicker` state
+ * (which is `string[]`) when opening the edit dialog. */
+function refNames(v: unknown): string[] {
+  if (v === null || v === undefined) return [];
+  if (Array.isArray(v)) {
+    return v.flatMap((item) => refNames(item));
+  }
+  if (typeof v === "object") {
+    const obj = v as Record<string, unknown>;
+    if (typeof obj.name === "string") return [obj.name];
+    if (typeof obj.uid === "string") return [obj.uid];
+    return [];
+  }
+  const s = String(v);
+  return s ? [s] : [];
 }
 
-function splitCsv(value: string): string[] {
-  return value
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 interface RuleFormState {
   name: string;
   position: "top" | "bottom";
   enabled: boolean;
-  source: string;
-  destination: string;
+  source: string[];
+  destination: string[];
 }
 
 const emptyForm: RuleFormState = {
   name: "",
   position: "bottom",
   enabled: true,
-  source: "",
-  destination: "",
+  source: [],
+  destination: [],
 };
 
 /** Layers coming back from the Management API only expose `name`/`uid`, so
@@ -156,8 +168,8 @@ export function HttpsInspectionPage() {
       name: typeof row.name === "string" ? row.name : "",
       position: "bottom",
       enabled: row.enabled !== false,
-      source: refName(row.source),
-      destination: refName(row.destination),
+      source: refNames(row.source),
+      destination: refNames(row.destination),
     });
     setDialogOpen(true);
   }
@@ -168,8 +180,8 @@ export function HttpsInspectionPage() {
   }
 
   function handleSubmit() {
-    const source = splitCsv(form.source);
-    const destination = splitCsv(form.destination);
+    const source = form.source;
+    const destination = form.destination;
 
     if (editingUid) {
       const fields: JsonRecord = {
@@ -306,21 +318,19 @@ export function HttpsInspectionPage() {
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="https-rule-source">Origem</Label>
-              <Input
-                id="https-rule-source"
+              <ObjectPicker
                 value={form.source}
-                onChange={(e) => setForm((prev) => ({ ...prev, source: e.target.value }))}
-                placeholder="nomes separados por vírgula (vazio = Any)"
+                onChange={(names) => setForm((prev) => ({ ...prev, source: names }))}
+                placeholder="Buscar objetos... (vazio = Any)"
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="https-rule-destination">Destino</Label>
-              <Input
-                id="https-rule-destination"
+              <ObjectPicker
                 value={form.destination}
-                onChange={(e) => setForm((prev) => ({ ...prev, destination: e.target.value }))}
-                placeholder="nomes separados por vírgula (vazio = Any)"
+                onChange={(names) => setForm((prev) => ({ ...prev, destination: names }))}
+                placeholder="Buscar objetos... (vazio = Any)"
               />
             </div>
           </div>

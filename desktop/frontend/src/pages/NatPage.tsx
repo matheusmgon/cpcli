@@ -12,7 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -21,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ObjectPicker } from "@/components/shared/ObjectPicker";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { RulebaseTable } from "@/components/shared/RulebaseTable";
 import { getService, type JsonRecord } from "@/lib/wailsService";
@@ -58,23 +58,23 @@ const METHODS = ["static", "hide"] as const;
 type MethodOption = (typeof METHODS)[number];
 
 interface NatFormState {
-  originalSource: string;
-  originalDestination: string;
-  originalService: string;
-  translatedSource: string;
-  translatedDestination: string;
-  translatedService: string;
+  originalSource: string[];
+  originalDestination: string[];
+  originalService: string[];
+  translatedSource: string[];
+  translatedDestination: string[];
+  translatedService: string[];
   method: MethodOption;
   position: "top" | "bottom";
 }
 
 const emptyForm: NatFormState = {
-  originalSource: "",
-  originalDestination: "",
-  originalService: "",
-  translatedSource: "",
-  translatedDestination: "",
-  translatedService: "",
+  originalSource: [],
+  originalDestination: [],
+  originalService: [],
+  translatedSource: [],
+  translatedDestination: [],
+  translatedService: [],
   method: "hide",
   position: "bottom",
 };
@@ -145,12 +145,12 @@ export function NatPage() {
     const fields: JsonRecord = {
       method: form.method,
       position: form.position,
-      ...(form.originalSource && { "original-source": form.originalSource }),
-      ...(form.originalDestination && { "original-destination": form.originalDestination }),
-      ...(form.originalService && { "original-service": form.originalService }),
-      ...(form.translatedSource && { "translated-source": form.translatedSource }),
-      ...(form.translatedDestination && { "translated-destination": form.translatedDestination }),
-      ...(form.translatedService && { "translated-service": form.translatedService }),
+      ...(form.originalSource.length > 0 && { "original-source": form.originalSource }),
+      ...(form.originalDestination.length > 0 && { "original-destination": form.originalDestination }),
+      ...(form.originalService.length > 0 && { "original-service": form.originalService }),
+      ...(form.translatedSource.length > 0 && { "translated-source": form.translatedSource }),
+      ...(form.translatedDestination.length > 0 && { "translated-destination": form.translatedDestination }),
+      ...(form.translatedService.length > 0 && { "translated-service": form.translatedService }),
     };
     addMutation.mutate(fields);
   }
@@ -256,61 +256,55 @@ export function NatPage() {
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="nat-original-source">Origem original</Label>
-              <Input
-                id="nat-original-source"
+              <ObjectPicker
                 value={form.originalSource}
-                onChange={(e) => setForm((prev) => ({ ...prev, originalSource: e.target.value }))}
-                placeholder="nome do objeto (vazio = Any)"
+                onChange={(names) => setForm((prev) => ({ ...prev, originalSource: names }))}
+                placeholder="Buscar objetos... (vazio = Any)"
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="nat-original-destination">Destino original</Label>
-              <Input
-                id="nat-original-destination"
+              <ObjectPicker
                 value={form.originalDestination}
-                onChange={(e) => setForm((prev) => ({ ...prev, originalDestination: e.target.value }))}
-                placeholder="nome do objeto (vazio = Any)"
+                onChange={(names) => setForm((prev) => ({ ...prev, originalDestination: names }))}
+                placeholder="Buscar objetos... (vazio = Any)"
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="nat-original-service">Serviço original</Label>
-              <Input
-                id="nat-original-service"
+              <ObjectPicker
                 value={form.originalService}
-                onChange={(e) => setForm((prev) => ({ ...prev, originalService: e.target.value }))}
-                placeholder="nome do objeto (vazio = Any)"
+                onChange={(names) => setForm((prev) => ({ ...prev, originalService: names }))}
+                placeholder="Buscar objetos... (vazio = Any)"
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="nat-translated-source">Origem traduzida</Label>
-              <Input
-                id="nat-translated-source"
+              <ObjectPicker
                 value={form.translatedSource}
-                onChange={(e) => setForm((prev) => ({ ...prev, translatedSource: e.target.value }))}
-                placeholder="nome do objeto (opcional)"
+                onChange={(names) => setForm((prev) => ({ ...prev, translatedSource: names }))}
+                placeholder="Buscar objetos... (opcional)"
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="nat-translated-destination">Destino traduzido</Label>
-              <Input
-                id="nat-translated-destination"
+              <ObjectPicker
                 value={form.translatedDestination}
-                onChange={(e) => setForm((prev) => ({ ...prev, translatedDestination: e.target.value }))}
-                placeholder="nome do objeto (opcional)"
+                onChange={(names) => setForm((prev) => ({ ...prev, translatedDestination: names }))}
+                placeholder="Buscar objetos... (opcional)"
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="nat-translated-service">Serviço traduzido</Label>
-              <Input
-                id="nat-translated-service"
+              <ObjectPicker
                 value={form.translatedService}
-                onChange={(e) => setForm((prev) => ({ ...prev, translatedService: e.target.value }))}
-                placeholder="nome do objeto (opcional)"
+                onChange={(names) => setForm((prev) => ({ ...prev, translatedService: names }))}
+                placeholder="Buscar objetos... (opcional)"
               />
             </div>
           </div>

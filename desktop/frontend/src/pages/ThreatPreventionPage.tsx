@@ -25,6 +25,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DataTable } from "@/components/shared/DataTable";
 import { EntityFormDialog } from "@/components/shared/EntityFormDialog";
+import { ObjectPicker } from "@/components/shared/ObjectPicker";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { RulebaseTable } from "@/components/shared/RulebaseTable";
 import { getService, type JsonRecord } from "@/lib/wailsService";
@@ -50,29 +51,40 @@ function refName(v: unknown): string {
   return String(v);
 }
 
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
+/** Same normalization as `refName`, but returns each object name as its own
+ * array entry instead of joining them — used to seed `ObjectPicker` state
+ * (which is `string[]`) when opening the edit dialog. */
+function refNames(v: unknown): string[] {
+  if (v === null || v === undefined) return [];
+  if (Array.isArray(v)) {
+    return v.flatMap((item) => refNames(item));
+  }
+  if (typeof v === "object") {
+    const obj = v as Record<string, unknown>;
+    if (typeof obj.name === "string") return [obj.name];
+    if (typeof obj.uid === "string") return [obj.uid];
+    return [];
+  }
+  const s = String(v);
+  return s ? [s] : [];
 }
 
-function splitCsv(value: string): string[] {
-  return value
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 interface RuleFormState {
   name: string;
   position: "top" | "bottom";
   enabled: boolean;
-  protectedScope: string;
+  protectedScope: string[];
 }
 
 const emptyForm: RuleFormState = {
   name: "",
   position: "bottom",
   enabled: true,
-  protectedScope: "",
+  protectedScope: [],
 };
 
 /** Layers coming back from the Management API only expose `name`/`uid`, so
@@ -156,7 +168,7 @@ function ThreatRulesTab() {
       name: typeof row.name === "string" ? row.name : "",
       position: "bottom",
       enabled: row.enabled !== false,
-      protectedScope: refName(row["protected-scope"]),
+      protectedScope: refNames(row["protected-scope"]),
     });
     setDialogOpen(true);
   }
@@ -167,7 +179,7 @@ function ThreatRulesTab() {
   }
 
   function handleSubmit() {
-    const protectedScope = splitCsv(form.protectedScope);
+    const protectedScope = form.protectedScope;
 
     if (editingUid) {
       const fields: JsonRecord = {
@@ -301,11 +313,10 @@ function ThreatRulesTab() {
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="threat-rule-scope">Escopo protegido</Label>
-              <Input
-                id="threat-rule-scope"
+              <ObjectPicker
                 value={form.protectedScope}
-                onChange={(e) => setForm((prev) => ({ ...prev, protectedScope: e.target.value }))}
-                placeholder="nomes separados por vírgula (vazio = Any)"
+                onChange={(names) => setForm((prev) => ({ ...prev, protectedScope: names }))}
+                placeholder="Buscar objetos... (vazio = Any)"
               />
             </div>
           </div>

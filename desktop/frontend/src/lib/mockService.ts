@@ -332,6 +332,20 @@ export const mockService: CpService = {
     pending++;
     return delay(fields);
   },
+  async searchObjects(filter, objType) {
+    requireSession();
+    const all: JsonRecord[] = [
+      ...Object.entries(objectStore).flatMap(([kind, rows]) => rows.map((r) => ({ ...r, type: kind }))),
+      ...gateways,
+    ];
+    const f = filter.trim().toLowerCase();
+    const filtered = all.filter((r) => {
+      if (objType && r.type !== objType) return false;
+      if (!f) return true;
+      return String(r.name ?? "").toLowerCase().includes(f);
+    });
+    return delay(filtered.slice(0, 50));
+  },
   async vpnKinds() {
     return delay(["star", "meshed"]);
   },

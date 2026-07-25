@@ -67,6 +67,8 @@ export interface CpService {
   // Gateway interfaces (anti-spoofing)
   listGatewayInterfaces(gateway: string): Promise<JsonRecord[]>;
   setGatewayInterface(gateway: string, ifaceName: string, fields: JsonRecord): Promise<JsonRecord>;
+  // Object search (picker)
+  searchObjects(filter: string, objType: string): Promise<JsonRecord[]>;
   vpnKinds(): Promise<string[]>;
   listVpnCommunities(kind: string): Promise<JsonRecord[]>;
   getVpnCommunity(kind: string, name: string): Promise<JsonRecord>;
@@ -121,6 +123,7 @@ const realService: CpService = {
   deleteHttpsRule: (layer, uid) => Real.DeleteHttpsRule(layer, uid),
   listGatewayInterfaces: (gateway) => Real.ListGatewayInterfaces(gateway),
   setGatewayInterface: (gateway, ifaceName, fields) => Real.SetGatewayInterface(gateway, ifaceName, fields),
+  searchObjects: (filter, objType) => Real.SearchObjects(filter, objType),
   vpnKinds: () => Real.VpnKinds(),
   listVpnCommunities: (kind) => Real.ListVpnCommunities(kind),
   getVpnCommunity: (kind, name) => Real.GetVpnCommunity(kind, name),

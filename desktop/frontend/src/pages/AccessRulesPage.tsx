@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ObjectPicker } from "@/components/shared/ObjectPicker";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { RulebaseTable } from "@/components/shared/RulebaseTable";
 import { getService, type JsonRecord } from "@/lib/wailsService";
@@ -46,15 +47,26 @@ function refName(v: unknown): string {
   return String(v);
 }
 
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
+/** Same normalization as `refName`, but returns each object name as its own
+ * array entry instead of joining them — used to seed `ObjectPicker` state
+ * (which is `string[]`) when opening the edit dialog. */
+function refNames(v: unknown): string[] {
+  if (v === null || v === undefined) return [];
+  if (Array.isArray(v)) {
+    return v.flatMap((item) => refNames(item));
+  }
+  if (typeof v === "object") {
+    const obj = v as Record<string, unknown>;
+    if (typeof obj.name === "string") return [obj.name];
+    if (typeof obj.uid === "string") return [obj.uid];
+    return [];
+  }
+  const s = String(v);
+  return s ? [s] : [];
 }
 
-function splitCsv(value: string): string[] {
-  return value
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 const ACTIONS = ["accept", "drop", "reject", "ask"] as const;
@@ -65,9 +77,9 @@ interface RuleFormState {
   action: ActionOption;
   position: "top" | "bottom";
   enabled: boolean;
-  source: string;
-  destination: string;
-  service: string;
+  source: string[];
+  destination: string[];
+  service: string[];
 }
 
 const emptyForm: RuleFormState = {
@@ -75,9 +87,9 @@ const emptyForm: RuleFormState = {
   action: "accept",
   position: "bottom",
   enabled: true,
-  source: "",
-  destination: "",
-  service: "",
+  source: [],
+  destination: [],
+  service: [],
 };
 
 /** Layers/packages coming back from the Management API — access layers only
@@ -163,9 +175,9 @@ export function AccessRulesPage() {
       action: (ACTIONS as readonly string[]).includes(actionName) ? (actionName as ActionOption) : "accept",
       position: "bottom",
       enabled: row.enabled !== false,
-      source: refName(row.source),
-      destination: refName(row.destination),
-      service: refName(row.service),
+      source: refNames(row.source),
+      destination: refNames(row.destination),
+      service: refNames(row.service),
     });
     setDialogOpen(true);
   }
@@ -181,17 +193,17 @@ export function AccessRulesPage() {
         enabled: form.enabled,
         action: form.action,
         ...(form.name && { name: form.name }),
-        ...(form.source && { source: splitCsv(form.source) }),
-        ...(form.destination && { destination: splitCsv(form.destination) }),
-        ...(form.service && { service: splitCsv(form.service) }),
+        ...(form.source.length > 0 && { source: form.source }),
+        ...(form.destination.length > 0 && { destination: form.destination }),
+        ...(form.service.length > 0 && { service: form.service }),
       };
       editMutation.mutate({ uid: editingUid, fields });
       return;
     }
 
-    const source = splitCsv(form.source);
-    const destination = splitCsv(form.destination);
-    const service = splitCsv(form.service);
+    const source = form.source;
+    const destination = form.destination;
+    const service = form.service;
     const fields: JsonRecord = {
       action: form.action,
       position: form.position,
@@ -338,31 +350,28 @@ export function AccessRulesPage() {
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="rule-source">Origem</Label>
-              <Input
-                id="rule-source"
+              <ObjectPicker
                 value={form.source}
-                onChange={(e) => setForm((prev) => ({ ...prev, source: e.target.value }))}
-                placeholder="nomes separados por vírgula (vazio = Any)"
+                onChange={(names) => setForm((prev) => ({ ...prev, source: names }))}
+                placeholder="Buscar objetos... (vazio = Any)"
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="rule-destination">Destino</Label>
-              <Input
-                id="rule-destination"
+              <ObjectPicker
                 value={form.destination}
-                onChange={(e) => setForm((prev) => ({ ...prev, destination: e.target.value }))}
-                placeholder="nomes separados por vírgula (vazio = Any)"
+                onChange={(names) => setForm((prev) => ({ ...prev, destination: names }))}
+                placeholder="Buscar objetos... (vazio = Any)"
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="rule-service">Serviço</Label>
-              <Input
-                id="rule-service"
+              <ObjectPicker
                 value={form.service}
-                onChange={(e) => setForm((prev) => ({ ...prev, service: e.target.value }))}
-                placeholder="nomes separados por vírgula (vazio = Any)"
+                onChange={(names) => setForm((prev) => ({ ...prev, service: names }))}
+                placeholder="Buscar objetos... (vazio = Any)"
               />
             </div>
           </div>

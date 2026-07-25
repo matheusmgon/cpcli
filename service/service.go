@@ -234,6 +234,36 @@ func (s *Service) DeleteObject(kind, name string) error {
 	return err
 }
 
+// --- Search --------------------------------------------------------------------
+
+// SearchObjects searches for objects across every type (or narrowed to
+// objType) matching filter — powers the desktop UI's object picker used to
+// find source/destination/service/etc. values by name instead of typing
+// them blind. Deliberately bounded to a single page (unlike listSimple,
+// which aggregates every page): a picker only needs "good enough matches"
+// for the current search text, not an exhaustive list — if what the caller
+// wants isn't in the first batch, they refine the filter, the same way
+// SmartConsole's own object-picker dropdown behaves.
+func (s *Service) SearchObjects(filter, objType string) ([]map[string]interface{}, error) {
+	c, err := s.conn()
+	if err != nil {
+		return nil, err
+	}
+	payload := map[string]interface{}{"limit": 50}
+	if filter != "" {
+		payload["filter"] = filter
+	}
+	if objType != "" {
+		payload["type"] = objType
+	}
+	data, err := c.Call("show-objects", payload, false)
+	if err != nil {
+		return nil, err
+	}
+	items, _ := data["objects"].([]interface{})
+	return toMaps(items), nil
+}
+
 // --- Access control / NAT (read) --------------------------------------------
 
 // ListAccessLayers returns the Access Control layers.
