@@ -156,6 +156,17 @@ function ThreatRulesTab() {
     onError: (error) => toast.error(`Falha ao remover regra: ${getErrorMessage(error)}`),
   });
 
+  const toggleEnabledMutation = useMutation({
+    mutationFn: ({ uid, enabled }: { uid: string; enabled: boolean }) =>
+      getService().setThreatRule(layerName, uid, { enabled }),
+    onSuccess: (_data, { enabled }) => {
+      toast.success(enabled ? "Regra ativada" : "Regra desativada");
+      invalidateRulebase();
+      useSessionStore.getState().markPending(1);
+    },
+    onError: (error) => toast.error(`Falha ao alterar regra: ${getErrorMessage(error)}`),
+  });
+
   function openCreateDialog() {
     setEditingUid(null);
     setForm(emptyForm);
@@ -179,13 +190,17 @@ function ThreatRulesTab() {
   }
 
   function handleSubmit() {
-    const protectedScope = form.protectedScope;
+    // Always send explicit "Any" for object-list fields left blank in the
+    // form, instead of omitting them — keeps the UX consistent with Access
+    // rules and avoids relying on server-side defaults (which vary by rule
+    // type and API version).
+    const protectedScope = form.protectedScope.length > 0 ? form.protectedScope : ["Any"];
 
     if (editingUid) {
       const fields: JsonRecord = {
         enabled: form.enabled,
+        "protected-scope": protectedScope,
         ...(form.name && { name: form.name }),
-        ...(protectedScope.length > 0 && { "protected-scope": protectedScope }),
       };
       editMutation.mutate({ uid: editingUid, fields });
       return;
@@ -200,7 +215,7 @@ function ThreatRulesTab() {
       name: form.name,
       position: form.position,
       enabled: true,
-      ...(protectedScope.length > 0 && { "protected-scope": protectedScope }),
+      "protected-scope": protectedScope,
     };
     addMutation.mutate(fields);
   }
@@ -241,6 +256,23 @@ function ThreatRulesTab() {
         emptyMessage={layerName ? "Esta layer ainda não tem regras." : "Selecione uma layer para ver as regras."}
         columns={[
           { header: "#", cell: (row) => (typeof row["rule-number"] === "number" ? String(row["rule-number"]) : "") },
+          {
+            header: "Ativa",
+            cell: (row) => {
+              const uid = String(row.uid ?? "");
+              const enabled = row.enabled !== false;
+              return (
+                <input
+                  type="checkbox"
+                  checked={enabled}
+                  disabled={!uid || toggleEnabledMutation.isPending}
+                  onChange={() => toggleEnabledMutation.mutate({ uid, enabled: !enabled })}
+                  className="size-4 rounded border-border accent-accent"
+                  aria-label={enabled ? "Desativar regra" : "Ativar regra"}
+                />
+              );
+            },
+          },
           { header: "Nome", cell: (row) => (typeof row.name === "string" ? row.name : "") },
           { header: "Ação", cell: (row) => refName(row.action) },
           { header: "Escopo protegido", cell: (row) => refName(row["protected-scope"]) },
@@ -260,7 +292,7 @@ function ThreatRulesTab() {
         }}
       />
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen} modal={false}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editingUid ? "Editar regra" : "Nova regra"}</DialogTitle>
@@ -317,6 +349,7 @@ function ThreatRulesTab() {
                 value={form.protectedScope}
                 onChange={(names) => setForm((prev) => ({ ...prev, protectedScope: names }))}
                 placeholder="Buscar objetos... (vazio = Any)"
+                categories={["network"]}
               />
             </div>
           </div>

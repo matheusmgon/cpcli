@@ -14,6 +14,7 @@ import {
   ShieldAlert,
   Lock,
   Rocket,
+  ScrollText,
   Star,
   Share2,
   Boxes,
@@ -58,6 +59,10 @@ export const navGroups: NavGroup[] = [
       { label: "HTTPS Inspection", to: "/https-inspection", icon: Lock },
       { label: "Instalar política", to: "/install-policy", icon: Rocket },
     ],
+  },
+  {
+    title: "Monitoramento",
+    items: [{ label: "Logs & Monitor", to: "/logs", icon: ScrollText }],
   },
   {
     title: "VPN Communities",

@@ -6,6 +6,7 @@ import { DashboardPage } from "@/pages/DashboardPage";
 import { GatewaysPage } from "@/pages/GatewaysPage";
 import { HttpsInspectionPage } from "@/pages/HttpsInspectionPage";
 import { InstallPolicyPage } from "@/pages/InstallPolicyPage";
+import { LogsPage } from "@/pages/LogsPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { NatPage } from "@/pages/NatPage";
 import { ObjectsPage } from "@/pages/ObjectsPage";
@@ -30,6 +31,7 @@ export default function App() {
         <Route path="/https-inspection" element={<HttpsInspectionPage />} />
         <Route path="/vpn/:kind" element={<VpnPage />} />
         <Route path="/install-policy" element={<InstallPolicyPage />} />
+        <Route path="/logs" element={<LogsPage />} />
         <Route path="/gateways" element={<GatewaysPage />} />
         <Route path="/packages" element={<PackagesPage />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

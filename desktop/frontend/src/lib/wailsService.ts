@@ -64,11 +64,16 @@ export interface CpService {
   addHttpsRule(layer: string, fields: JsonRecord): Promise<JsonRecord>;
   setHttpsRule(layer: string, uid: string, fields: JsonRecord): Promise<JsonRecord>;
   deleteHttpsRule(layer: string, uid: string): Promise<void>;
-  // Gateway interfaces (anti-spoofing)
+  // Gateway interfaces (anti-spoofing / topology)
   listGatewayInterfaces(gateway: string): Promise<JsonRecord[]>;
   setGatewayInterface(gateway: string, ifaceName: string, fields: JsonRecord): Promise<JsonRecord>;
+  refreshGatewayTopology(gateway: string): Promise<JsonRecord>;
+  // Gateway software blades
+  getGatewayBlades(gateway: string): Promise<JsonRecord>;
+  setGatewayBlades(gateway: string, fields: JsonRecord): Promise<JsonRecord>;
   // Object search (picker)
   searchObjects(filter: string, objType: string): Promise<JsonRecord[]>;
+  countObjects(filter: string, objType: string): Promise<number>;
   vpnKinds(): Promise<string[]>;
   listVpnCommunities(kind: string): Promise<JsonRecord[]>;
   getVpnCommunity(kind: string, name: string): Promise<JsonRecord>;
@@ -77,6 +82,7 @@ export interface CpService {
   deleteVpnCommunity(kind: string, name: string): Promise<void>;
   publish(): Promise<JsonRecord>;
   discard(): Promise<JsonRecord>;
+  readFirewallLogs(gateway: string, filter: string, limit: number): Promise<JsonRecord[]>;
 }
 
 function hasWailsRuntime(): boolean {
@@ -123,7 +129,11 @@ const realService: CpService = {
   deleteHttpsRule: (layer, uid) => Real.DeleteHttpsRule(layer, uid),
   listGatewayInterfaces: (gateway) => Real.ListGatewayInterfaces(gateway),
   setGatewayInterface: (gateway, ifaceName, fields) => Real.SetGatewayInterface(gateway, ifaceName, fields),
+  refreshGatewayTopology: (gateway) => Real.RefreshGatewayTopology(gateway),
+  getGatewayBlades: (gateway) => Real.GetGatewayBlades(gateway),
+  setGatewayBlades: (gateway, fields) => Real.SetGatewayBlades(gateway, fields),
   searchObjects: (filter, objType) => Real.SearchObjects(filter, objType),
+  countObjects: (filter, objType) => Real.CountObjects(filter, objType),
   vpnKinds: () => Real.VpnKinds(),
   listVpnCommunities: (kind) => Real.ListVpnCommunities(kind),
   getVpnCommunity: (kind, name) => Real.GetVpnCommunity(kind, name),
@@ -132,6 +142,7 @@ const realService: CpService = {
   deleteVpnCommunity: (kind, name) => Real.DeleteVpnCommunity(kind, name),
   publish: () => Real.Publish(),
   discard: () => Real.Discard(),
+  readFirewallLogs: (gateway, filter, limit) => Real.ReadFirewallLogs(gateway, filter, limit),
 };
 
 /** Real Wails bindings inside the native app / `wails dev`; an in-memory

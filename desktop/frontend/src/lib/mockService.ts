@@ -80,6 +80,22 @@ const natRulebase: JsonRecord[] = [
 ];
 
 const gateways: JsonRecord[] = [{ name: "gw-fw01", type: "simple-gateway", "ipv4-address": "192.168.56.10" }];
+
+/** Shared filter behind `searchObjects`/`countObjects` — mirrors the real
+ * `show-objects` semantics closely enough for mock/offline UI work: `type`
+ * narrows to one object kind, `filter` substring-matches the name. */
+function matchObjects(filter: string, objType: string): JsonRecord[] {
+  const all: JsonRecord[] = [
+    ...Object.entries(objectStore).flatMap(([kind, rows]) => rows.map((r) => ({ ...r, type: kind }))),
+    ...gateways,
+  ];
+  const f = filter.trim().toLowerCase();
+  return all.filter((r) => {
+    if (objType && r.type !== objType) return false;
+    if (!f) return true;
+    return String(r.name ?? "").toLowerCase().includes(f);
+  });
+}
 const vpnMeshed: JsonRecord[] = [{ name: "MyIntranet", gateways: [{ name: "gw-fw01" }] }];
 const vpnStar: JsonRecord[] = [];
 
@@ -119,6 +135,23 @@ const gatewayInterfaces: Record<string, JsonRecord[]> = {
       "anti-spoofing-settings": { action: "prevent", "spoof-tracking": "log", "exclude-packets": false },
     },
   ],
+};
+
+const gatewayBlades: Record<string, JsonRecord> = {
+  "gw-fw01": {
+    firewall: true,
+    vpn: false,
+    "application-control": false,
+    "url-filtering": false,
+    ips: true,
+    "anti-bot": false,
+    "anti-virus": false,
+    "threat-emulation": false,
+    "threat-extraction": false,
+    "content-awareness": false,
+    "identity-awareness": false,
+    "https-inspection": false,
+  },
 };
 
 function requireSession() {
@@ -332,19 +365,28 @@ export const mockService: CpService = {
     pending++;
     return delay(fields);
   },
+  async refreshGatewayTopology(gateway) {
+    requireSession();
+    pending++;
+    return delay({ "target-name": gateway, task: "mock-get-interfaces" });
+  },
+  async getGatewayBlades(gateway) {
+    requireSession();
+    return delay(gatewayBlades[gateway] ?? {});
+  },
+  async setGatewayBlades(gateway, fields) {
+    requireSession();
+    gatewayBlades[gateway] = { ...(gatewayBlades[gateway] ?? {}), ...fields };
+    pending++;
+    return delay(gatewayBlades[gateway]);
+  },
   async searchObjects(filter, objType) {
     requireSession();
-    const all: JsonRecord[] = [
-      ...Object.entries(objectStore).flatMap(([kind, rows]) => rows.map((r) => ({ ...r, type: kind }))),
-      ...gateways,
-    ];
-    const f = filter.trim().toLowerCase();
-    const filtered = all.filter((r) => {
-      if (objType && r.type !== objType) return false;
-      if (!f) return true;
-      return String(r.name ?? "").toLowerCase().includes(f);
-    });
-    return delay(filtered.slice(0, 50));
+    return delay(matchObjects(filter, objType).slice(0, 50));
+  },
+  async countObjects(filter, objType) {
+    requireSession();
+    return delay(matchObjects(filter, objType).length);
   },
   async vpnKinds() {
     return delay(["star", "meshed"]);
@@ -389,5 +431,19 @@ export const mockService: CpService = {
     requireSession();
     pending = 0;
     return delay({});
+  },
+  async readFirewallLogs(_gateway, filter, _limit) {
+    requireSession();
+    const sample: JsonRecord[] = [
+      { time: "20:54:28", action: "accept", iface: "eth2", src: "192.168.56.1", dst: "192.168.56.10", proto: "tcp", service_id: "https", rule_name: "Admin Host-Only" },
+      { time: "20:54:14", action: "drop", iface: "eth1", src: "10.0.10.100", dst: "8.8.8.8", proto: "udp", service_id: "domain-udp", rule_name: "Cleanup rule" },
+      { time: "20:53:31", action: "accept", iface: "eth2", src: "192.168.56.1", dst: "192.168.56.10", proto: "tcp", service_id: "https", rule_name: "Admin Host-Only" },
+      { time: "20:53:11", action: "drop", iface: "eth1", src: "10.0.10.100", dst: "8.8.8.8", proto: "udp", service_id: "domain-udp", rule_name: "Cleanup rule" },
+    ];
+    const f = filter.trim().toLowerCase();
+    const out = f
+      ? sample.filter((r) => Object.values(r).some((v) => String(v).toLowerCase().includes(f)))
+      : sample;
+    return delay(out);
   },
 };

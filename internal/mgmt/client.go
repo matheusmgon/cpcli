@@ -7,6 +7,7 @@ package mgmt
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	api "github.com/CheckPointSW/cp-mgmt-api-go-sdk/APIFiles"
@@ -19,6 +20,16 @@ const DefaultPort = api.DefaultPort
 // DefaultCallTimeout bounds how long a single API call may run. See the note
 // on the busy-loop guard in callWithTimeout for why this exists.
 const DefaultCallTimeout = 5 * time.Minute
+
+// httpTimeout is the per-HTTP-request timeout passed to the Check Point SDK
+// via api.APIClientArgs. The SDK's own default (api.TimeOut) is 10s, which
+// is too short for slow operations against a laden Management Server —
+// install-policy in particular occasionally has a single show-task poll
+// stall for more than 10s and fails client-side even though the task
+// itself is progressing normally. 5 minutes matches DefaultCallTimeout so
+// the two ceilings agree; the SDK's waitForTask loop returns as soon as
+// the task reports done, so raising the ceiling doesn't slow anything.
+const httpTimeout = 5 * time.Minute
 
 // queryPageLimit mirrors the fixed page size the SDK's own pagination helper
 // uses.
@@ -75,7 +86,7 @@ type Conn struct {
 // fingerprint prompt (or a hard failure, in non-interactive use) on every
 // later command.
 func Connect(c Conn) *Client {
-	args := api.APIClientArgs(c.Port, "", c.Sid, c.Server, "", -1, c.APIVersion, c.Insecure, false, "", api.WebContext, api.TimeOut, api.SleepTime, "cpcli", "", -1)
+	args := api.APIClientArgs(c.Port, "", c.Sid, c.Server, "", -1, c.APIVersion, c.Insecure, false, "", api.WebContext, httpTimeout, api.SleepTime, "cpcli", "", -1)
 	return newClient(api.APIClient(args))
 }
 
@@ -103,7 +114,7 @@ type LoginResult struct {
 // Login authenticates and returns a ready-to-use Client together with the
 // session details to persist.
 func Login(o LoginOptions) (*Client, *LoginResult, error) {
-	args := api.APIClientArgs(o.Port, "", "", o.Server, "", -1, "", o.Insecure, false, "", api.WebContext, api.TimeOut, api.SleepTime, "cpcli", "", -1)
+	args := api.APIClientArgs(o.Port, "", "", o.Server, "", -1, "", o.Insecure, false, "", api.WebContext, httpTimeout, api.SleepTime, "cpcli", "", -1)
 	sdk := api.APIClient(args)
 
 	var res api.APIResponse
@@ -137,9 +148,131 @@ func (c *Client) Call(command string, payload map[string]interface{}, waitForTas
 		return nil, err
 	}
 	if !res.Success {
-		return nil, &APIError{Command: command, Message: res.ErrorMsg}
+		return nil, &APIError{Command: command, Message: formatFailure(res.ErrorMsg, res.GetData())}
 	}
 	return res.GetData(), nil
+}
+
+// formatFailure builds a useful error message for a failed API response.
+// The SDK's ErrorMsg is often empty or minimal for task-based commands
+// (e.g. install-policy leaves it as just "Failed to execute API call\n
+// Task: X\nMessage: " when task-details don't carry a `fault-message` —
+// many task types put the real detail in `statusDescription`,
+// `description`, or `message` instead). Fall back to walking the raw
+// response data so the user sees the actual reason instead of a blank
+// toast.
+func formatFailure(sdkErrMsg string, data map[string]interface{}) string {
+	extras := extractFailureDetails(data)
+	msg := strings.TrimSpace(sdkErrMsg)
+	if len(extras) == 0 {
+		if msg != "" {
+			return msg
+		}
+		return "operação falhou (o servidor não retornou detalhes)"
+	}
+	joined := strings.Join(extras, "\n")
+	if msg == "" || msg == "Failed to execute API call" {
+		return joined
+	}
+	return msg + "\n" + joined
+}
+
+// extractFailureDetails walks a Management API failure response and
+// returns every string-valued detail field it recognizes (tasks/task-
+// details, top-level errors/warnings/blocking-errors, and common message/
+// description fields). Empty strings are dropped.
+func extractFailureDetails(data map[string]interface{}) []string {
+	var out []string
+	push := func(s string) {
+		s = strings.TrimSpace(s)
+		if s != "" {
+			out = append(out, s)
+		}
+	}
+	stringField := func(m map[string]interface{}, keys ...string) {
+		for _, k := range keys {
+			if v, ok := m[k].(string); ok {
+				push(v)
+			}
+		}
+	}
+
+	stringField(data, "message", "description", "statusDescription", "error")
+
+	pushMessages := func(key string) {
+		items, ok := data[key].([]interface{})
+		if !ok {
+			return
+		}
+		for _, it := range items {
+			if m, ok := it.(map[string]interface{}); ok {
+				stringField(m, "message", "description")
+			} else if s, ok := it.(string); ok {
+				push(s)
+			}
+		}
+	}
+	pushMessages("errors")
+	pushMessages("warnings")
+	pushMessages("blocking-errors")
+
+	tasks, ok := data["tasks"].([]interface{})
+	if !ok {
+		return out
+	}
+	for _, t := range tasks {
+		task, ok := t.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		name, _ := task["task-name"].(string)
+		status, _ := task["status"].(string)
+		if name != "" || status != "" {
+			push(fmt.Sprintf("Task: %s [%s]", name, status))
+		}
+		details, _ := task["task-details"].([]interface{})
+		for _, d := range details {
+			dm, ok := d.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			stringField(dm, "fault-message", "statusDescription", "message", "description")
+			if stages, ok := dm["stagesInfo"].([]interface{}); ok {
+				for _, st := range stages {
+					sm, ok := st.(map[string]interface{})
+					if !ok {
+						continue
+					}
+					stringField(sm, "statusDescription", "description", "message")
+					// stagesInfo entries carry a nested `messages` array
+					// where each item is `{message, type}` (type = "err" |
+					// "warn"). This is where install-policy hides the real
+					// reason it failed (topology unset, license expired,
+					// rulebase generation errors, etc.) — the SDK's
+					// generic error formatter never looks here.
+					if msgs, ok := sm["messages"].([]interface{}); ok {
+						for _, m := range msgs {
+							mm, ok := m.(map[string]interface{})
+							if !ok {
+								continue
+							}
+							kind, _ := mm["type"].(string)
+							text, _ := mm["message"].(string)
+							if text == "" {
+								continue
+							}
+							if kind != "" {
+								push(fmt.Sprintf("[%s] %s", kind, text))
+							} else {
+								push(text)
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	return out
 }
 
 // List aggregates every page of a paginated "show-*s" command into one slice.

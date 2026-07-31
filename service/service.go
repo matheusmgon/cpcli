@@ -9,9 +9,12 @@
 package service
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
+	"time"
 
 	"cpcli/internal/mgmt"
 )
@@ -221,6 +224,13 @@ func (s *Service) SetObject(kind string, fields map[string]interface{}) (map[str
 }
 
 // DeleteObject removes an object of the given kind by name. Pending until Publish.
+//
+// Sends `ignore-warnings: true` so the delete goes through even when the
+// object is referenced elsewhere (a rule, group, gateway topology, etc.) —
+// otherwise the API returns HTTP 409 (`generic_err_object_in_use`) and the
+// delete fails. This mirrors the "Delete anyway?" prompt that SmartConsole
+// itself shows on the same warning; without it, no object that was ever put
+// into a rule could be cleaned up from this app.
 func (s *Service) DeleteObject(kind, name string) error {
 	oc, err := resolveKind(kind)
 	if err != nil {
@@ -230,7 +240,10 @@ func (s *Service) DeleteObject(kind, name string) error {
 	if err != nil {
 		return err
 	}
-	_, err = c.Call(oc.del, map[string]interface{}{"name": name}, true)
+	_, err = c.Call(oc.del, map[string]interface{}{
+		"name":            name,
+		"ignore-warnings": true,
+	}, true)
 	return err
 }
 
@@ -249,7 +262,7 @@ func (s *Service) SearchObjects(filter, objType string) ([]map[string]interface{
 	if err != nil {
 		return nil, err
 	}
-	payload := map[string]interface{}{"limit": 50}
+	payload := map[string]interface{}{"limit": 50, "details-level": "full"}
 	if filter != "" {
 		payload["filter"] = filter
 	}
@@ -261,7 +274,74 @@ func (s *Service) SearchObjects(filter, objType string) ([]map[string]interface{
 		return nil, err
 	}
 	items, _ := data["objects"].([]interface{})
-	return toMaps(items), nil
+	results := toMaps(items)
+
+	// Gateways/servers live in a separate object store than the "generic"
+	// network objects — show-objects doesn't include simple-gateway,
+	// checkpoint-host, cluster-member, etc. When the caller isn't
+	// restricting by type, fan out to show-gateways-and-servers so a
+	// picker search for the gateway's own name (e.g. "CheckPointA" for
+	// Source/Destination on a rule) actually finds it.
+	//
+	// show-gateways-and-servers rejects the "filter" parameter in some
+	// Management API versions, so we fetch the (typically small) full
+	// list and filter by name substring on the client side.
+	if objType == "" {
+		gwData, gwErr := c.Call("show-gateways-and-servers", map[string]interface{}{
+			"limit":         50,
+			"details-level": "full",
+		}, false)
+		if gwErr == nil {
+			gwItems, _ := gwData["objects"].([]interface{})
+			seen := make(map[string]bool, len(results))
+			for _, r := range results {
+				if uid, _ := r["uid"].(string); uid != "" {
+					seen[uid] = true
+				}
+			}
+			needle := strings.ToLower(filter)
+			for _, gw := range toMaps(gwItems) {
+				if needle != "" {
+					name, _ := gw["name"].(string)
+					if !strings.Contains(strings.ToLower(name), needle) {
+						continue
+					}
+				}
+				if uid, _ := gw["uid"].(string); uid == "" || !seen[uid] {
+					results = append(results, gw)
+				}
+			}
+		}
+	}
+	return results, nil
+}
+
+// CountObjects returns the total number of objects (across every page, not
+// just what's returned) matching filter/objType — powers the object picker's
+// per-category counters. Uses limit:1 since only the response's "total"
+// field is read, never the objects themselves.
+func (s *Service) CountObjects(filter, objType string) (int, error) {
+	c, err := s.conn()
+	if err != nil {
+		return 0, err
+	}
+	payload := map[string]interface{}{"limit": 1}
+	if filter != "" {
+		payload["filter"] = filter
+	}
+	if objType != "" {
+		payload["type"] = objType
+	}
+	data, err := c.Call("show-objects", payload, false)
+	if err != nil {
+		return 0, err
+	}
+	switch total := data["total"].(type) {
+	case float64:
+		return int(total), nil
+	default:
+		return 0, nil
+	}
 }
 
 // --- Access control / NAT (read) --------------------------------------------
@@ -533,6 +613,41 @@ func (s *Service) ListGatewayInterfaces(gateway string) ([]map[string]interface{
 	return toMaps(ifaces), nil
 }
 
+// GetGatewayBlades returns the raw simple-gateway object at full detail —
+// the same "show-simple-gateway" call ListGatewayInterfaces uses, minus the
+// narrowing to just the "interfaces" field — so the desktop UI's blade
+// toggles can read which software blades (firewall, ips, vpn, ...) are
+// currently enabled.
+func (s *Service) GetGatewayBlades(gateway string) (map[string]interface{}, error) {
+	c, err := s.conn()
+	if err != nil {
+		return nil, err
+	}
+	return c.Call("show-simple-gateway", map[string]interface{}{
+		"name":          gateway,
+		"details-level": "full",
+	}, false)
+}
+
+// SetGatewayBlades enables/disables software blades on a gateway (e.g.
+// {"firewall": true, "ips": false}). Blade fields are plain top-level
+// booleans, not an array or nested object — unlike "interfaces"/
+// "anti-spoofing-settings" (see SetGatewayInterface below), set-simple-gateway
+// only touches the fields present in the payload here, so no read-merge-write
+// is needed (confirmed live: toggling a blade left "interfaces" and every
+// other field on the gateway unchanged).
+func (s *Service) SetGatewayBlades(gateway string, fields map[string]interface{}) (map[string]interface{}, error) {
+	c, err := s.conn()
+	if err != nil {
+		return nil, err
+	}
+	payload := map[string]interface{}{"name": gateway}
+	for k, v := range fields {
+		payload[k] = v
+	}
+	return c.Call("set-simple-gateway", payload, true)
+}
+
 // SetGatewayInterface changes fields (e.g. "anti-spoofing") on one named
 // interface of a gateway. set-simple-gateway replaces the WHOLE
 // "interfaces" array rather than patching a single entry — sending back
@@ -560,6 +675,23 @@ func (s *Service) SetGatewayInterface(gateway, ifaceName string, fields map[stri
 	return c.Call("set-simple-gateway", map[string]interface{}{
 		"name":       gateway,
 		"interfaces": updated,
+	}, true)
+}
+
+// RefreshGatewayTopology triggers the Check Point "Get Interfaces" action —
+// same as clicking the button of that name in SmartConsole. The management
+// server contacts the gateway over SIC and re-reads its physical interface
+// list, updating the topology stored on the management server (without
+// touching anti-spoofing / manual topology settings). Required by the
+// RC060 assignment's Ex. 4 after a new Gaia-level interface is added.
+func (s *Service) RefreshGatewayTopology(gateway string) (map[string]interface{}, error) {
+	c, err := s.conn()
+	if err != nil {
+		return nil, err
+	}
+	return c.Call("get-interfaces", map[string]interface{}{
+		"target-name":   gateway,
+		"with-topology": true,
 	}, true)
 }
 
@@ -718,4 +850,195 @@ func toMaps(items []interface{}) []map[string]interface{} {
 		}
 	}
 	return out
+}
+
+// --- Firewall logs -----------------------------------------------------------
+
+// ReadFirewallLogs reads the last `limit` (max 500) firewall log entries from
+// the given gateway using `fw log` over SIC via the run-script API.
+//
+// The `show-logs` Management API is designed for Smart-1 log servers and
+// returns "no log servers available" against Standalone installs like this
+// lab's, where the same box is both mgmt and gateway. Running `fw log`
+// directly on the gateway sidesteps that — Standalone stores logs
+// locally (`save-logs-locally: true`) and `fw log` reads them from disk.
+//
+// The output of `fw log -n` is one line per event with `key: value;` pairs.
+// Parsed into a structured shape here so the UI can render columns
+// (timestamp, action, source, destination, service, rule) without doing
+// string-splitting in TypeScript.
+func (s *Service) ReadFirewallLogs(gateway, filter string, limit int) ([]map[string]interface{}, error) {
+	if limit <= 0 || limit > 500 {
+		limit = 100
+	}
+	c, err := s.conn()
+	if err != nil {
+		return nil, err
+	}
+
+	// Build the fw log command. `-n` skips DNS resolution (faster). We
+	// pipe to grep for the caller's filter and to tail for the limit —
+	// `fw log` has no count flag (`-c` is action selection, not count)
+	// and reads the whole active log file otherwise.
+	script := "fw log -n"
+	if filter = strings.TrimSpace(filter); filter != "" {
+		script += " | grep -i " + shellQuote(filter)
+	}
+	script += fmt.Sprintf(" | tail -%d", limit)
+
+	// Kick off run-script asynchronously (waitForTask=false) — we poll
+	// show-task ourselves with details-level=full to get the base64
+	// responseMessage that carries stdout. If we let the SDK wait, it uses
+	// details-level=standard on its polls, which drops responseMessage.
+	launch, err := c.Call("run-script", map[string]interface{}{
+		"script-name": "cpcli-read-logs",
+		"script":      script,
+		"targets":     []string{gateway},
+	}, false)
+	if err != nil {
+		return nil, err
+	}
+	tasks, _ := launch["tasks"].([]interface{})
+	if len(tasks) == 0 {
+		return nil, errors.New("run-script não retornou task-id")
+	}
+	first, _ := tasks[0].(map[string]interface{})
+	taskID, _ := first["task-id"].(string)
+	if taskID == "" {
+		return nil, errors.New("run-script sem task-id")
+	}
+
+	// Poll show-task with details-level=full until done. Cap at 60s;
+	// `fw log -c 500` is fast on a healthy appliance.
+	deadline := time.Now().Add(60 * time.Second)
+	var stdout, stderr string
+	for {
+		if time.Now().After(deadline) {
+			return nil, fmt.Errorf("run-script timeout esperando task %s", taskID)
+		}
+		res, err := c.Call("show-task", map[string]interface{}{
+			"task-id":       taskID,
+			"details-level": "full",
+		}, false)
+		if err != nil {
+			return nil, err
+		}
+		taskArr, _ := res["tasks"].([]interface{})
+		if len(taskArr) == 0 {
+			return nil, errors.New("show-task retornou vazio")
+		}
+		t, _ := taskArr[0].(map[string]interface{})
+		status, _ := t["status"].(string)
+		if status == "in progress" || status == "pending" {
+			time.Sleep(750 * time.Millisecond)
+			continue
+		}
+		details, _ := t["task-details"].([]interface{})
+		if len(details) > 0 {
+			d, _ := details[0].(map[string]interface{})
+			if s, ok := d["responseMessage"].(string); ok {
+				if raw, decErr := base64.StdEncoding.DecodeString(s); decErr == nil {
+					stdout = string(raw)
+				}
+			}
+			if s, ok := d["responseError"].(string); ok {
+				if raw, decErr := base64.StdEncoding.DecodeString(s); decErr == nil {
+					stderr = string(raw)
+				}
+			}
+		}
+		if status != "succeeded" {
+			return nil, fmt.Errorf("fw log falhou (status=%s): %s", status, strings.TrimSpace(stderr))
+		}
+		break
+	}
+
+	return parseFwLog(stdout), nil
+}
+
+// shellQuote wraps s in single quotes for POSIX shells, escaping any
+// embedded single quote.
+func shellQuote(s string) string {
+	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
+}
+
+// parseFwLog turns each line of `fw log -n` output into a structured map.
+// A raw line looks like:
+//
+//	20:53:11 5 N/A  3  drop 192.168.56.10 > eth1  LogId: 0; ... src: 10.0.10.10; dst: 8.8.8.8; proto: udp; ... rule_name: Cleanup rule; ...
+//
+// The prefix before "LogId:" has the timestamp, action, origin, and iface;
+// everything after is a `key: value;`-separated list. Keys we surface as
+// columns: src, dst, service_id (svc name), proto, rule_name, layer_name.
+func parseFwLog(out string) []map[string]interface{} {
+	lines := strings.Split(out, "\n")
+	result := make([]map[string]interface{}, 0, len(lines))
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		entry := map[string]interface{}{"raw": line}
+
+		// Split at "LogId:" — everything before is fixed prefix, after
+		// is key:value pairs.
+		idx := strings.Index(line, "LogId:")
+		var prefix, tail string
+		if idx > 0 {
+			prefix = strings.TrimSpace(line[:idx])
+			tail = line[idx:]
+		} else {
+			prefix = line
+		}
+
+		// Prefix format: HH:MM:SS N N/A N action origin > iface
+		fields := strings.Fields(prefix)
+		if len(fields) >= 1 {
+			entry["time"] = fields[0]
+		}
+		if len(fields) >= 5 {
+			entry["action"] = fields[4]
+		}
+		if len(fields) >= 6 {
+			entry["origin"] = fields[5]
+		}
+		// find "> iface"
+		for i := 0; i+1 < len(fields); i++ {
+			if fields[i] == ">" {
+				entry["iface"] = fields[i+1]
+				break
+			}
+		}
+
+		// Key: value; pairs
+		for _, part := range strings.Split(tail, ";") {
+			part = strings.TrimSpace(part)
+			if part == "" {
+				continue
+			}
+			eq := strings.Index(part, ":")
+			if eq < 0 {
+				continue
+			}
+			k := strings.TrimSpace(part[:eq])
+			v := strings.TrimSpace(part[eq+1:])
+			switch k {
+			case "src", "dst", "proto", "service_id", "svc", "rule_name", "layer_name",
+				"s_port", "rule_uid", "xlatesrc", "xlatedst", "xlatesport", "xlatedport",
+				// Non-packet entries — NAT/rule hit counters, policy events,
+				// etc. — show up with these keys instead of src/dst. Surfacing
+				// them lets the UI mark those rows as "counter" instead of
+				// looking blank.
+				"policy", "hit", "log_id", "first_hit_time", "last_hit_time",
+				"inzone", "outzone":
+				entry[k] = v
+			}
+		}
+		result = append(result, entry)
+	}
+	// Reverse so newest is on top.
+	for i, j := 0, len(result)-1; i < j; i, j = i+1, j-1 {
+		result[i], result[j] = result[j], result[i]
+	}
+	return result
 }

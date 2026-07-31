@@ -17,11 +17,11 @@ export function LoginPage() {
   const toggleTheme = useSessionStore((s) => s.toggleTheme);
   const setSession = useSessionStore((s) => s.setSession);
 
-  const [server, setServer] = useState("192.168.56.10");
+  const [server, setServer] = useState("");
   const [user, setUser] = useState("admin");
   const [port, setPort] = useState("443");
   const [password, setPassword] = useState("");
-  const [insecure, setInsecure] = useState(true);
+  const [insecure, setInsecure] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {

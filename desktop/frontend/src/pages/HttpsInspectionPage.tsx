@@ -156,6 +156,17 @@ export function HttpsInspectionPage() {
     onError: (error) => toast.error(`Falha ao remover regra: ${getErrorMessage(error)}`),
   });
 
+  const toggleEnabledMutation = useMutation({
+    mutationFn: ({ uid, enabled }: { uid: string; enabled: boolean }) =>
+      getService().setHttpsRule(layerName, uid, { enabled }),
+    onSuccess: (_data, { enabled }) => {
+      toast.success(enabled ? "Regra ativada" : "Regra desativada");
+      invalidateRulebase();
+      useSessionStore.getState().markPending(1);
+    },
+    onError: (error) => toast.error(`Falha ao alterar regra: ${getErrorMessage(error)}`),
+  });
+
   function openCreateDialog() {
     setEditingUid(null);
     setForm(emptyForm);
@@ -180,15 +191,18 @@ export function HttpsInspectionPage() {
   }
 
   function handleSubmit() {
-    const source = form.source;
-    const destination = form.destination;
+    // Always send explicit "Any" for object-list fields left blank in the
+    // form, instead of omitting them — keeps the UX consistent with Access
+    // rules and avoids relying on server-side defaults.
+    const source = form.source.length > 0 ? form.source : ["Any"];
+    const destination = form.destination.length > 0 ? form.destination : ["Any"];
 
     if (editingUid) {
       const fields: JsonRecord = {
         enabled: form.enabled,
+        source,
+        destination,
         ...(form.name && { name: form.name }),
-        ...(source.length > 0 && { source }),
-        ...(destination.length > 0 && { destination }),
       };
       editMutation.mutate({ uid: editingUid, fields });
       return;
@@ -197,9 +211,9 @@ export function HttpsInspectionPage() {
     const fields: JsonRecord = {
       position: form.position,
       enabled: true,
+      source,
+      destination,
       ...(form.name && { name: form.name }),
-      ...(source.length > 0 && { source }),
-      ...(destination.length > 0 && { destination }),
     };
     addMutation.mutate(fields);
   }
@@ -245,6 +259,23 @@ export function HttpsInspectionPage() {
         emptyMessage={layerName ? "Esta layer ainda não tem regras." : "Selecione uma layer para ver as regras."}
         columns={[
           { header: "#", cell: (row) => (typeof row["rule-number"] === "number" ? String(row["rule-number"]) : "") },
+          {
+            header: "Ativa",
+            cell: (row) => {
+              const uid = String(row.uid ?? "");
+              const enabled = row.enabled !== false;
+              return (
+                <input
+                  type="checkbox"
+                  checked={enabled}
+                  disabled={!uid || toggleEnabledMutation.isPending}
+                  onChange={() => toggleEnabledMutation.mutate({ uid, enabled: !enabled })}
+                  className="size-4 rounded border-border accent-accent"
+                  aria-label={enabled ? "Desativar regra" : "Ativar regra"}
+                />
+              );
+            },
+          },
           { header: "Nome", cell: (row) => (typeof row.name === "string" ? row.name : "") },
           { header: "Ação", cell: (row) => refName(row.action) },
           { header: "Origem", cell: (row) => refName(row.source) },
@@ -265,7 +296,7 @@ export function HttpsInspectionPage() {
         }}
       />
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen} modal={false}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editingUid ? "Editar regra" : "Nova regra"}</DialogTitle>
@@ -322,6 +353,7 @@ export function HttpsInspectionPage() {
                 value={form.source}
                 onChange={(names) => setForm((prev) => ({ ...prev, source: names }))}
                 placeholder="Buscar objetos... (vazio = Any)"
+                categories={["network"]}
               />
             </div>
 
@@ -331,6 +363,7 @@ export function HttpsInspectionPage() {
                 value={form.destination}
                 onChange={(names) => setForm((prev) => ({ ...prev, destination: names }))}
                 placeholder="Buscar objetos... (vazio = Any)"
+                categories={["network"]}
               />
             </div>
           </div>

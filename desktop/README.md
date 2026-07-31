@@ -27,10 +27,9 @@ cpcli/service            → fachada de UI (Login/ListObjects/Publish/…)
 cpcli/internal/mgmt      → core de transporte/sessão (compartilhado com o CLI)
 ```
 
-Direção visual: paleta azul-marinho corporativo (não o laranja/vermelho da
-versão inicial), sidebar escura fixa nos dois temas claro/escuro, ícones
-lucide-react, dashboard de overview logo após o login. Decisões completas de
-design em `/home/matheus/.claude/plans/abundant-sauteeing-snowflake.md`.
+Direção visual: paleta azul-marinho corporativo, sidebar escura fixa nos
+dois temas claro/escuro, ícones lucide-react, dashboard de overview logo
+após o login.
 
 ### Regenerar os bindings do Wails
 

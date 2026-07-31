@@ -72,11 +72,15 @@ function getErrorMessage(error: unknown): string {
 const ACTIONS = ["accept", "drop", "reject", "ask"] as const;
 type ActionOption = (typeof ACTIONS)[number];
 
+const TRACK_TYPES = ["None", "Log", "Alert"] as const;
+type TrackOption = (typeof TRACK_TYPES)[number];
+
 interface RuleFormState {
   name: string;
   action: ActionOption;
   position: "top" | "bottom";
   enabled: boolean;
+  track: TrackOption;
   source: string[];
   destination: string[];
   service: string[];
@@ -87,10 +91,17 @@ const emptyForm: RuleFormState = {
   action: "accept",
   position: "bottom",
   enabled: true,
+  track: "Log",
   source: [],
   destination: [],
   service: [],
 };
+
+function normalizeTrack(v: unknown): TrackOption {
+  const name = refName(v);
+  const match = TRACK_TYPES.find((t) => t.toLowerCase() === name.toLowerCase());
+  return match ?? "Log";
+}
 
 /** Layers/packages coming back from the Management API — access layers only
  * expose `name`/`uid`, so treat the shape loosely rather than modeling it. */
@@ -161,6 +172,17 @@ export function AccessRulesPage() {
     onError: (error) => toast.error(`Falha ao remover regra: ${getErrorMessage(error)}`),
   });
 
+  const toggleEnabledMutation = useMutation({
+    mutationFn: ({ uid, enabled }: { uid: string; enabled: boolean }) =>
+      getService().setAccessRule(layerName, uid, { enabled }),
+    onSuccess: (_data, { enabled }) => {
+      toast.success(enabled ? "Regra ativada" : "Regra desativada");
+      invalidateRulebase();
+      useSessionStore.getState().markPending(1);
+    },
+    onError: (error) => toast.error(`Falha ao alterar regra: ${getErrorMessage(error)}`),
+  });
+
   function openCreateDialog() {
     setEditingUid(null);
     setForm(emptyForm);
@@ -170,11 +192,16 @@ export function AccessRulesPage() {
   function openEditDialog(row: JsonRecord) {
     setEditingUid(String(row.uid));
     const actionName = refName(row.action).toLowerCase();
+    const trackRaw =
+      row.track && typeof row.track === "object" && "type" in (row.track as Record<string, unknown>)
+        ? (row.track as Record<string, unknown>).type
+        : row.track;
     setForm({
       name: typeof row.name === "string" ? row.name : "",
       action: (ACTIONS as readonly string[]).includes(actionName) ? (actionName as ActionOption) : "accept",
       position: "bottom",
       enabled: row.enabled !== false,
+      track: normalizeTrack(trackRaw),
       source: refNames(row.source),
       destination: refNames(row.destination),
       service: refNames(row.service),
@@ -188,30 +215,38 @@ export function AccessRulesPage() {
   }
 
   function handleSubmit() {
+    // NB: this Management API defaults empty source/destination/service to
+    // an object literally named "None" (not "Any") — a rule with "None" in
+    // any of these columns never matches. Confirmed live against the lab.
+    // So we always send explicit ["Any"] when the field is left blank in
+    // the form, both on create and on edit, instead of omitting the field.
+    const source = form.source.length > 0 ? form.source : ["Any"];
+    const destination = form.destination.length > 0 ? form.destination : ["Any"];
+    const service = form.service.length > 0 ? form.service : ["Any"];
+
     if (editingUid) {
       const fields: JsonRecord = {
         enabled: form.enabled,
         action: form.action,
+        track: { type: form.track },
+        source,
+        destination,
+        service,
         ...(form.name && { name: form.name }),
-        ...(form.source.length > 0 && { source: form.source }),
-        ...(form.destination.length > 0 && { destination: form.destination }),
-        ...(form.service.length > 0 && { service: form.service }),
       };
       editMutation.mutate({ uid: editingUid, fields });
       return;
     }
 
-    const source = form.source;
-    const destination = form.destination;
-    const service = form.service;
     const fields: JsonRecord = {
       action: form.action,
       position: form.position,
       enabled: true,
+      track: { type: form.track },
+      source,
+      destination,
+      service,
       ...(form.name && { name: form.name }),
-      ...(source.length > 0 && { source }),
-      ...(destination.length > 0 && { destination }),
-      ...(service.length > 0 && { service }),
     };
     addMutation.mutate(fields);
   }
@@ -257,11 +292,38 @@ export function AccessRulesPage() {
         emptyMessage={layerName ? "Esta layer ainda não tem regras." : "Selecione uma layer para ver as regras."}
         columns={[
           { header: "#", cell: (row) => (typeof row["rule-number"] === "number" ? String(row["rule-number"]) : "") },
+          {
+            header: "Ativa",
+            cell: (row) => {
+              const uid = String(row.uid ?? "");
+              const enabled = row.enabled !== false;
+              return (
+                <input
+                  type="checkbox"
+                  checked={enabled}
+                  disabled={!uid || toggleEnabledMutation.isPending}
+                  onChange={() => toggleEnabledMutation.mutate({ uid, enabled: !enabled })}
+                  className="size-4 rounded border-border accent-accent"
+                  aria-label={enabled ? "Desativar regra" : "Ativar regra"}
+                />
+              );
+            },
+          },
           { header: "Nome", cell: (row) => (typeof row.name === "string" ? row.name : "") },
           { header: "Ação", cell: (row) => refName(row.action) },
           { header: "Origem", cell: (row) => refName(row.source) },
           { header: "Destino", cell: (row) => refName(row.destination) },
           { header: "Serviço", cell: (row) => refName(row.service) },
+          {
+            header: "Track",
+            cell: (row) => {
+              if (row.track && typeof row.track === "object") {
+                const t = (row.track as Record<string, unknown>).type;
+                return refName(t);
+              }
+              return refName(row.track);
+            },
+          },
         ]}
         renderActions={(row) => {
           const uid = String(row.uid ?? "");
@@ -278,7 +340,7 @@ export function AccessRulesPage() {
         }}
       />
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen} modal={false}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editingUid ? "Editar regra" : "Nova regra"}</DialogTitle>
@@ -313,6 +375,25 @@ export function AccessRulesPage() {
                   {ACTIONS.map((action) => (
                     <SelectItem key={action} value={action}>
                       {action}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="rule-track">Track</Label>
+              <Select
+                value={form.track}
+                onValueChange={(value) => setForm((prev) => ({ ...prev, track: value as TrackOption }))}
+              >
+                <SelectTrigger id="rule-track">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {TRACK_TYPES.map((track) => (
+                    <SelectItem key={track} value={track}>
+                      {track}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -354,6 +435,7 @@ export function AccessRulesPage() {
                 value={form.source}
                 onChange={(names) => setForm((prev) => ({ ...prev, source: names }))}
                 placeholder="Buscar objetos... (vazio = Any)"
+                categories={["network"]}
               />
             </div>
 
@@ -363,6 +445,7 @@ export function AccessRulesPage() {
                 value={form.destination}
                 onChange={(names) => setForm((prev) => ({ ...prev, destination: names }))}
                 placeholder="Buscar objetos... (vazio = Any)"
+                categories={["network"]}
               />
             </div>
 
@@ -372,6 +455,7 @@ export function AccessRulesPage() {
                 value={form.service}
                 onChange={(names) => setForm((prev) => ({ ...prev, service: names }))}
                 placeholder="Buscar objetos... (vazio = Any)"
+                categories={["service"]}
               />
             </div>
           </div>

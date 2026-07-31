@@ -1,3 +1,16 @@
 /cpcli
 /bin/
 *.test
+
+# Local scratch binaries (built from throwaway cmd/* programs during dev)
+/svctest*
+/logtest*
+/pol*
+
+# Editor and OS junk
+.vscode/
+.idea/
+.DS_Store
+
+# Local session/agent working state
+.claude/
