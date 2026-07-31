@@ -68,8 +68,8 @@ lados.
 ### CLI
 
 ```sh
-git clone https://github.com/matheusmgon/CheckPoint-SmartConsole-Golang.git
-cd CheckPoint-SmartConsole-Golang
+git clone https://github.com/matheusmgon/cpcli.git
+cd cpcli
 go build -o cpcli ./cmd/cpcli
 ./cpcli --help
 ```
