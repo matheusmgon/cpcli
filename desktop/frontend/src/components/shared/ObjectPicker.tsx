@@ -39,8 +39,8 @@ interface ObjectPickerProps {
   value: string[];
   onChange: (names: string[]) => void;
   placeholder?: string;
-  /** Which categories this field's objects can come from (e.g. Origem/
-   * Destino → ["network"], Serviço → ["service"]). Defaults to every
+  /** Which categories this field's objects can come from (e.g. Source/
+   * Destination → ["network"], Service → ["service"]). Defaults to every
    * category — used by fields that legitimately accept anything. */
   categories?: CategoryKey[];
 }
@@ -92,7 +92,7 @@ async function searchAcrossTypes(filter: string, types: string[]): Promise<JsonR
 
 /** Search-and-select combobox for Check Point objects (hosts, networks,
  * groups, services, ...) — replaces free-text "type the exact name" inputs
- * on Origem/Destino/Serviço-style fields with the same live-search flow
+ * on Source/Destination/Service-style fields with the same live-search flow
  * SmartConsole's own object picker uses.
  *
  * v2 (previous version only did flat text search across all types): adds a
@@ -100,7 +100,7 @@ async function searchAcrossTypes(filter: string, types: string[]): Promise<JsonR
  * shows IP/comment under each result the same way SmartConsole's dropdown
  * does, and lets the user create a missing object inline instead of leaving
  * the rule dialog to do it on the Objects page first. */
-export function ObjectPicker({ value, onChange, placeholder = "Buscar objetos...", categories }: ObjectPickerProps) {
+export function ObjectPicker({ value, onChange, placeholder = "Search objects...", categories }: ObjectPickerProps) {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -169,14 +169,14 @@ export function ObjectPicker({ value, onChange, placeholder = "Buscar objetos...
       const name = typeof created.name === "string" && created.name ? created.name : createValues.name;
       if (name) {
         onChange(value.includes(name) ? value : [...value, name]);
-        toast.success(`${objectKinds[createType]?.title ?? createType} "${name}" criado`);
+        toast.success(`${objectKinds[createType]?.title ?? createType} "${name}" created`);
       }
       useSessionStore.getState().markPending(1);
       queryClient.invalidateQueries({ queryKey: ["object-search"] });
       queryClient.invalidateQueries({ queryKey: ["object-count"] });
       setCreating(false);
     } catch (error) {
-      toast.error(`Falha ao criar objeto: ${error instanceof Error ? error.message : String(error)}`);
+      toast.error(`Failed to create object: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setCreateSubmitting(false);
     }
@@ -200,7 +200,7 @@ export function ObjectPicker({ value, onChange, placeholder = "Buscar objetos...
             className="h-9 w-full justify-between font-normal"
           >
             <span className="truncate text-muted">
-              {value.length > 0 ? `${value.length} selecionado${value.length === 1 ? "" : "s"}` : placeholder}
+              {value.length > 0 ? `${value.length} selected` : placeholder}
             </span>
             <ChevronDown className="size-4 shrink-0 opacity-60" />
           </Button>
@@ -215,7 +215,7 @@ export function ObjectPicker({ value, onChange, placeholder = "Buscar objetos...
                   activeKey === "all" ? "bg-accent text-accent-foreground" : "text-muted hover:bg-surface-2"
                 }`}
               >
-                Todos ({totalCount})
+                All ({totalCount})
               </button>
               {availableCategories.map((cat, idx) => (
                 <button
@@ -236,7 +236,7 @@ export function ObjectPicker({ value, onChange, placeholder = "Buscar objetos...
             <div className="flex flex-col gap-3 p-3">
               {creatable.length > 1 && (
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="picker-create-type">Tipo</Label>
+                  <Label htmlFor="picker-create-type">Type</Label>
                   <Select
                     value={createType}
                     onValueChange={(v) => {
@@ -270,27 +270,27 @@ export function ObjectPicker({ value, onChange, placeholder = "Buscar objetos...
               ))}
               <div className="flex justify-end gap-2 pt-1">
                 <Button type="button" variant="outline" size="sm" onClick={() => setCreating(false)}>
-                  Cancelar
+                  Cancel
                 </Button>
                 <Button type="button" size="sm" disabled={createSubmitting} onClick={handleCreateSubmit}>
-                  Criar
+                  Create
                 </Button>
               </div>
             </div>
           ) : (
             <>
               <Command shouldFilter={false}>
-                <CommandInput placeholder="Digite ao menos 2 letras..." value={query} onValueChange={setQuery} />
+                <CommandInput placeholder="Type at least 2 characters..." value={query} onValueChange={setQuery} />
                 <CommandList>
                   {query.trim().length < 2 ? (
-                    <CommandEmpty>Digite ao menos 2 letras para buscar.</CommandEmpty>
+                    <CommandEmpty>Type at least 2 characters to search.</CommandEmpty>
                   ) : isFetching ? (
                     <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted">
                       <Loader2 className="size-4 animate-spin" />
-                      Buscando...
+                      Searching...
                     </div>
                   ) : results.length === 0 ? (
-                    <CommandEmpty>Nenhum objeto encontrado.</CommandEmpty>
+                    <CommandEmpty>No objects found.</CommandEmpty>
                   ) : (
                     <CommandGroup>
                       {results.map((obj, idx) => {
@@ -331,8 +331,8 @@ export function ObjectPicker({ value, onChange, placeholder = "Buscar objetos...
                   <Button type="button" variant="ghost" size="sm" className="gap-1.5 text-accent" onClick={openCreate}>
                     <Plus className="size-3.5" />
                     {creatable.length === 1
-                      ? `Criar novo ${objectKinds[creatable[0]]?.title ?? creatable[0]}`
-                      : "Criar novo objeto"}
+                      ? `Create new ${objectKinds[creatable[0]]?.title ?? creatable[0]}`
+                      : "Create new object"}
                   </Button>
                 </div>
               )}
@@ -350,7 +350,7 @@ export function ObjectPicker({ value, onChange, placeholder = "Buscar objetos...
                 type="button"
                 onClick={() => remove(name)}
                 className="rounded-full p-0.5 hover:bg-surface-2"
-                aria-label={`Remover ${name}`}
+                aria-label={`Remove ${name}`}
               >
                 <X className="size-3" />
               </button>

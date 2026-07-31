@@ -12,12 +12,12 @@ export interface ObjectCategory {
 /** Fixed type→category mapping, covering every object type the backend
  * already knows about (`internal/cli/object.go`), including types the UI
  * can't create yet (e.g. `security-zone`, `application-site`) — those are
- * still searchable/selectable, just not offered in the inline "criar novo"
+ * still searchable/selectable, just not offered in the inline "create new"
  * form (see `creatableTypes` below). */
 export const objectCategories: ObjectCategory[] = [
   {
     key: "network",
-    label: "Rede",
+    label: "Network",
     types: [
       "host",
       "network",
@@ -38,12 +38,12 @@ export const objectCategories: ObjectCategory[] = [
   },
   {
     key: "service",
-    label: "Serviços",
+    label: "Services",
     types: ["service-tcp", "service-udp", "service-icmp", "service-other", "service-group"],
   },
   {
     key: "application",
-    label: "Aplicações",
+    label: "Applications",
     types: ["application-site"],
   },
 ];
@@ -51,7 +51,7 @@ export const objectCategories: ObjectCategory[] = [
 export type CategoryKey = (typeof objectCategories)[number]["key"];
 
 /** Types within a category that the UI actually knows how to create
- * (present in `objectKinds`) — powers the picker's inline "+ Criar novo"
+ * (present in `objectKinds`) — powers the picker's inline "+ Create new"
  * affordance and its type selector when more than one kind qualifies. */
 export function creatableTypes(category: ObjectCategory): string[] {
   return category.types.filter((type) => type in objectKinds);

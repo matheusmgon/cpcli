@@ -7,30 +7,30 @@ import (
 func newSessionCmd() *cobra.Command {
 	root := &cobra.Command{
 		Use:   "session",
-		Short: "Publica, descarta ou mostra a sessão de mudanças atual",
+		Short: "Publish, discard or show the current change session",
 	}
 	root.AddCommand(
 		&cobra.Command{
 			Use:   "publish",
-			Short: "Publica as mudanças pendentes (necessário após add/set/delete)",
+			Short: "Publish pending changes (required after add/set/delete)",
 			RunE: func(cmd *cobra.Command, args []string) error {
 				return callAndPrint("publish", map[string]interface{}{}, true, false)
 			},
 		},
 		&cobra.Command{
 			Use:   "discard",
-			Short: "Descarta as mudanças pendentes não publicadas",
+			Short: "Discard pending unpublished changes",
 			RunE: func(cmd *cobra.Command, args []string) error {
 				return callAndPrint("discard", map[string]interface{}{}, false, false)
 			},
 		},
 		&cobra.Command{
 			Use:   "show",
-			Short: "Mostra detalhes da sessão atual",
+			Short: "Show details of the current session",
 			RunE: func(cmd *cobra.Command, args []string) error {
-				// show-session não aceita "details-level" (retorna
-				// generic_err_invalid_parameter_name); ele já devolve a
-				// sessão atual por completo sem parâmetro nenhum.
+				// show-session does not accept "details-level" (returns
+				// generic_err_invalid_parameter_name); it already returns the
+				// current session in full with no parameters at all.
 				return callAndPrint("show-session", map[string]interface{}{}, false, false)
 			},
 		},

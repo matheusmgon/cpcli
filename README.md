@@ -1,65 +1,66 @@
-# CheckPoint SmartConsole em Go
+# cpcli — Check Point SmartConsole alternative in Go
 
-Uma alternativa **cross-platform** ao SmartConsole da Check Point, escrita
-em Go: um cliente **CLI** (`cpcli`) e um **app desktop** (Wails + React)
-para administrar um Check Point Security Management via **Check Point
-Management API**.
+A **cross-platform** alternative to Check Point's SmartConsole, written in
+Go: a **CLI** (`cpcli`) and a **desktop app** (Wails + React) to manage a
+Check Point Security Management server via the **Check Point Management
+API**.
 
-Feito porque a SmartConsole oficial é Windows-only. Aqui você configura
-objetos, regras (Access Control, NAT, Threat Prevention, HTTPS Inspection),
-gateways, VPN, instala política e lê logs — tudo em Linux e macOS.
+Built because the official SmartConsole is Windows-only. Here you can
+manage objects, rules (Access Control, NAT, Threat Prevention, HTTPS
+Inspection), gateways, VPN, install policy and read logs — all on Linux
+and macOS.
 
-Construído sobre o SDK oficial da Check Point:
+Built on top of Check Point's official SDK:
 [`github.com/CheckPointSW/cp-mgmt-api-go-sdk`](https://github.com/CheckPointSW/cp-mgmt-api-go-sdk).
 
 ---
 
-## Índice
+## Table of contents
 
-- [Componentes](#componentes)
-- [Pré-requisitos](#pré-requisitos)
+- [Components](#components)
+- [Requirements](#requirements)
 - [Build](#build)
-- [Guia rápido](#guia-rápido)
-- [Guia do CLI](#guia-do-cli)
-- [Guia do app desktop](#guia-do-app-desktop)
-- [Estrutura do projeto](#estrutura-do-projeto)
-- [Testes](#testes)
-- [Contribuindo](#contribuindo)
+- [Quick start](#quick-start)
+- [CLI guide](#cli-guide)
+- [Desktop app guide](#desktop-app-guide)
+- [Project layout](#project-layout)
+- [Tests](#tests)
+- [Contributing](#contributing)
 
 ---
 
-## Componentes
+## Components
 
-| Módulo | Descrição |
+| Module | Description |
 |---|---|
-| `cmd/cpcli` | CLI (`cpcli`) — comandos para todo o CRUD e operações de política |
-| `service/` | Fachada bindável — `Service` reúne as operações da UI |
-| `internal/mgmt/` | Core de transporte/sessão sobre o SDK oficial |
-| `desktop/` | App desktop (Wails + React + TypeScript + Tailwind) sobre a fachada |
+| `cmd/cpcli` | CLI (`cpcli`) — commands for full CRUD and policy operations |
+| `service/` | Bindable facade — `Service` groups UI-facing operations |
+| `internal/mgmt/` | Core transport/session on top of the official SDK |
+| `desktop/` | Desktop app (Wails + React + TypeScript + Tailwind) on top of the facade |
 
-CLI e app desktop compartilham o mesmo core (`internal/mgmt`) e a mesma
-fachada (`service/`). Qualquer feature adicionada ali aparece nos dois
-lados.
+The CLI and the desktop app share the same core (`internal/mgmt`) and the
+same facade (`service/`). Any feature added there shows up in both
+clients.
 
 ---
 
-## Pré-requisitos
+## Requirements
 
-**Só o CLI:**
+**CLI only:**
 - Go 1.25+
-- Rede até um Check Point Security Management (versão ≥ R80.10)
+- Network access to a Check Point Security Management (version ≥ R80.10)
 
-**Para o app desktop além disso:**
-- Node 20+ e npm (testado com Node 22)
+**For the desktop app on top of that:**
+- Node 20+ and npm (tested with Node 22)
 - [Wails CLI](https://wails.io) — `go install github.com/wailsapp/wails/v2/cmd/wails@latest`
-- Dependências de sistema da WebView (Linux):
+- WebView system dependencies (Linux):
   ```sh
   # Fedora
   sudo dnf install gtk3-devel webkit2gtk4.1-devel
   # Debian/Ubuntu
   sudo apt install libgtk-3-dev libwebkit2gtk-4.1-dev
   ```
-- Rode `wails doctor` para conferir o ambiente.
+- Run `wails doctor` to check your environment.
 
 ---
 
@@ -74,25 +75,25 @@ go build -o cpcli ./cmd/cpcli
 ./cpcli --help
 ```
 
-### App desktop
+### Desktop app
 
 ```sh
 cd desktop
-# Distros com webkit2gtk-4.1 (Fedora 40+, Ubuntu 24.04+):
+# Distros with webkit2gtk-4.1 (Fedora 40+, Ubuntu 24.04+):
 wails build -tags webkit2_41
-# Distros ainda em webkit2gtk-4.0:
+# Distros still on webkit2gtk-4.0:
 wails build
 ```
 
-O binário sai em `desktop/build/bin/cpcli-desktop`.
+Binary output: `desktop/build/bin/cpcli-desktop`.
 
-Para desenvolvimento (hot-reload de verdade):
+For development (real hot-reload):
 ```sh
 cd desktop
 wails dev -tags webkit2_41
 ```
 
-Para iterar só no frontend (com dados mockados, sem conectar em firewall):
+To iterate on the frontend only (with mocked data, no firewall needed):
 ```sh
 cd desktop/frontend
 npm install
@@ -101,102 +102,103 @@ npm run dev
 
 ---
 
-## Guia rápido
+## Quick start
 
-**CLI — criando uma rede interna, uma regra HTTPS e instalando política:**
+**CLI — create an internal network, an HTTPS rule and install the policy:**
 
 ```sh
-# 1. Login (senha via prompt ou env CPCLI_PASSWORD)
+# 1. Login (password via prompt or CPCLI_PASSWORD env)
 ./cpcli login --server 192.0.2.10 --user admin --insecure
 
-# 2. Criar objeto de rede
-./cpcli network add --name lan-interna \
+# 2. Create a network object
+./cpcli network add --name lan-internal \
     --field subnet4=10.0.10.0 --field mask-length4=24
 
-# 3. Criar regra HTTP/HTTPS
+# 3. Create an HTTP/HTTPS rule
 ./cpcli rule add --layer Network --name "web out" \
     --action accept \
-    --field 'source=["lan-interna"]' \
+    --field 'source=["lan-internal"]' \
     --field 'service=["http","https"]' \
     --field 'track={"type":"Log"}'
 
-# 4. Publicar as mudanças
+# 4. Publish the changes
 ./cpcli session publish
 
-# 5. Instalar a política
+# 5. Install the policy
 ./cpcli policy install --package Standard --target CheckPointA
 ```
 
-**App desktop — mesma coisa, com UI:** abrir `cpcli-desktop`, logar,
-navegar em *Object Explorer → Networks* → **Adicionar**, depois
-*Security Policies → Access Control* → **Nova regra**, botão **Publish** no
-topo, depois *Instalar política*.
+**Desktop app — same thing, with a UI:** open `cpcli-desktop`, log in,
+navigate to *Object Explorer → Networks* → **Add**, then *Security
+Policies → Access Control* → **New rule**, click **Publish** at the top,
+then *Install Policy*.
 
 ---
 
-## Guia do CLI
+## CLI guide
 
-Todos os comandos aceitam `--help` para ver flags e subcomandos.
+Every command accepts `--help` to see its flags and subcommands.
 
-### Sessão / autenticação
+### Session / authentication
 
-Todo o cliente exige login primeiro. A sessão fica salva em
-`~/.config/cpcli/session-<profile>.json` e é reutilizada pelos comandos
-seguintes. **Nenhuma senha é gravada em disco** — só o token de sessão.
+Every operation requires login first. The session is saved to
+`~/.config/cpcli/session-<profile>.json` and reused by later commands.
+**No password is ever written to disk** — only the session token.
 
 ```sh
-# Login com usuário/senha (prompt interativo)
+# Login with user/password (interactive prompt)
 ./cpcli login --server 192.0.2.10 --user admin
 
-# Login lendo senha da env var (útil em scripts)
-CPCLI_PASSWORD='meu-segredo' ./cpcli login --server 192.0.2.10 --user admin
+# Login reading the password from an env var (handy in scripts)
+CPCLI_PASSWORD='my-secret' ./cpcli login --server 192.0.2.10 --user admin
 
 # Login via API key
 ./cpcli login --server 192.0.2.10 --api-key 'AAAA-BBBB-CCCC'
 
-# Login somente-leitura
+# Read-only login
 ./cpcli login --server 192.0.2.10 --user admin --read-only
 
-# Continuar a última sessão (útil quando outro admin deixou objeto locked)
+# Continue the last session (useful when another admin left an object locked)
 ./cpcli login --server 192.0.2.10 --user admin --continue-last-session
 
-# Multi-Domain: escolher domínio específico
+# Multi-Domain: pick a specific domain
 ./cpcli login --server 192.0.2.10 --user admin --domain "Corp"
 
-# Desabilitar verificação de fingerprint TLS (lab only)
+# Skip TLS fingerprint verification (lab only)
 ./cpcli login --server 192.0.2.10 --user admin --insecure
 
-# Sair
+# Logout
 ./cpcli logout
 ```
 
-**Segurança do fingerprint:** na primeira conexão, o CLI pede confirmação
-do fingerprint SHA1 do servidor (igual ao `mgmt_cli`). Aceito, fica
-gravado em `~/.config/cpcli/fingerprints.json` para as próximas vezes.
+**Fingerprint security:** on the first connection the CLI asks you to
+confirm the server's SHA1 fingerprint (same as `mgmt_cli`). Once accepted,
+it is saved to `~/.config/cpcli/fingerprints.json` for later runs.
 
-### Objetos (hosts, networks, groups, serviços)
+### Objects (hosts, networks, groups, services)
 
-Cada tipo tem os mesmos subcomandos: `list`, `show`, `add`, `set`, `delete`.
+Every object type shares the same subcommands: `list`, `show`, `add`,
+`set`, `delete`.
 
-**Host** (endereço IP único):
+**Host** (single IP):
 ```sh
 ./cpcli host list
 ./cpcli host add --name web-01 --field ip-address=10.0.0.11
-./cpcli host set  --name web-01 --field comments='"Servidor web"'
+./cpcli host set  --name web-01 --field comments='"Web server"'
 ./cpcli host show --name web-01
 ./cpcli host delete --name web-01
 ```
 
-**Network** (subrede):
+**Network** (subnet):
 ```sh
-./cpcli network add --name lan-corporativa \
+./cpcli network add --name lan-corp \
     --field subnet4=10.0.0.0 --field mask-length4=24
 ./cpcli network list
 ```
 
 **Group:**
 ```sh
-./cpcli group add --name grp-servidores \
+./cpcli group add --name grp-servers \
     --field 'members=["web-01","db-01"]'
 ```
 
@@ -214,12 +216,12 @@ Cada tipo tem os mesmos subcomandos: `list`, `show`, `add`, `set`, `delete`.
     --field ipv4-address-last=10.0.5.100
 ```
 
-**Outros tipos suportados:** `service-group`, `access-role`,
+**Other supported types:** `service-group`, `access-role`,
 `security-zone`, `dns-domain`, `application-site`, `tag`, `time`,
 `wildcard`, `dynamic-object`.
 
-O flag `--field` aceita JSON — para valores complexos, cite entre aspas
-simples envolvendo JSON com aspas duplas:
+The `--field` flag takes JSON — for complex values, use single quotes
+around JSON with double quotes:
 ```sh
 --field 'members=["a","b","c"]'
 --field 'track={"type":"Log"}'
@@ -228,50 +230,50 @@ simples envolvendo JSON com aspas duplas:
 ### Access Control
 
 ```sh
-# Listar layers
+# List layers
 ./cpcli rule layers
 
-# Listar regras de uma layer
+# List rules in a layer
 ./cpcli rule list --layer Network
 
-# Adicionar regra
+# Add a rule
 ./cpcli rule add --layer Network \
     --name "web out" \
     --action accept \
     --position top \
-    --field 'source=["lan-interna"]' \
+    --field 'source=["lan-internal"]' \
     --field 'destination=["Any"]' \
     --field 'service=["http","https"]' \
     --field 'track={"type":"Log"}'
 
-# Editar (por nome ou uid)
+# Edit (by name or uid)
 ./cpcli rule set --layer Network --name "web out" \
     --field 'service=["http","https","ssh"]'
 
-# Ver detalhes
+# Show details
 ./cpcli rule show --layer Network --name "web out"
 
-# Apagar
+# Delete
 ./cpcli rule delete --layer Network --name "web out"
 ```
 
-Ações possíveis: `accept`, `drop`, `reject`, `ask`.
-Posições: `top`, `bottom`, número (ex: `3`), `above:<uid>`, `below:<uid>`.
+Actions: `accept`, `drop`, `reject`, `ask`.
+Positions: `top`, `bottom`, a number (e.g. `3`), `above:<uid>`, `below:<uid>`.
 
 ### NAT
 
 ```sh
-# Lista
+# List
 ./cpcli nat list --package Standard
 
-# Hide NAT (mascara toda uma rede atrás do próprio gateway)
+# Hide NAT (mask an entire network behind the gateway itself)
 ./cpcli nat add --package Standard \
     --field 'method="hide"' \
-    --field 'original-source="lan-interna"' \
+    --field 'original-source="lan-internal"' \
     --field 'translated-source="CheckPointA"' \
     --field 'position="bottom"'
 
-# Static NAT (mapeamento 1:1)
+# Static NAT (1:1 mapping)
 ./cpcli nat add --package Standard \
     --field 'method="static"' \
     --field 'original-source="web-01"' \
@@ -287,7 +289,7 @@ Posições: `top`, `bottom`, número (ex: `3`), `above:<uid>`, `below:<uid>`.
 ./cpcli threat rule list --layer 'Standard Threat Prevention'
 ./cpcli threat rule add --layer 'Standard Threat Prevention' \
     --name "servers strict" \
-    --field 'protected-scope=["grp-servidores"]' \
+    --field 'protected-scope=["grp-servers"]' \
     --field 'action="Strict"' \
     --field 'position="top"'
 ./cpcli threat profile list
@@ -305,26 +307,26 @@ Posições: `top`, `bottom`, número (ex: `3`), `above:<uid>`, `below:<uid>`.
     --field 'position="top"'
 ```
 
-### Gateways e interfaces
+### Gateways and interfaces
 
 ```sh
-# Listar todos os gateways/servidores
+# List all gateways/servers
 ./cpcli gateway list
 
-# Ver detalhe (interfaces, blades, VPN, etc.)
+# Show details (interfaces, blades, VPN, etc.)
 ./cpcli gateway show --name CheckPointA
 
-# Alterar blade (ex: habilitar Application Control)
+# Change a blade (e.g. enable Application Control)
 ./cpcli gateway set --name CheckPointA --field application-control=true
 
 # --- Interfaces ---
-# Marcar eth1 como internal com rede definida pela máscara + anti-spoofing
+# Mark eth1 as internal with network defined by the interface mask + anti-spoofing
 ./cpcli gateway interface set --gateway CheckPointA --interface eth1 \
     --field 'topology="internal"' \
     --field 'topology-settings={"ip-address-behind-this-interface":"network defined by the interface ip and net mask"}' \
     --field 'anti-spoofing=true'
 
-# Marcar eth0 como external
+# Mark eth0 as external
 ./cpcli gateway interface set --gateway CheckPointA --interface eth0 \
     --field 'topology="external"'
 ```
@@ -342,214 +344,211 @@ Posições: `top`, `bottom`, número (ex: `3`), `above:<uid>`, `below:<uid>`.
     --field 'satellite-gateways=["gw-sp","gw-rio"]'
 ```
 
-### Instalação de política
+### Policy installation
 
 ```sh
-# Lista pacotes disponíveis
+# List available packages
 ./cpcli policy package list
 
-# Verificar sem instalar
+# Verify without installing
 ./cpcli policy verify --package Standard
 
-# Instalar em um ou mais gateways
+# Install on one or more gateways
 ./cpcli policy install --package Standard --target CheckPointA
 ./cpcli policy install --package Standard --target GW-SP --target GW-RJ
 ```
 
-### Busca de objetos
+### Object search
 
 ```sh
-# Busca em todos os tipos por substring
+# Search all types by substring
 ./cpcli find --filter "web"
 
-# Restringe a um tipo
+# Restrict to a type
 ./cpcli find --filter "web" --type host
 
-# Descobre onde um objeto é referenciado (rules, groups, etc)
-./cpcli find where-used --name lan-interna
-./cpcli find where-used --name lan-interna --indirect  # inclui referências via grupos
+# Find where an object is referenced (rules, groups, etc.)
+./cpcli find where-used --name lan-internal
+./cpcli find where-used --name lan-internal --indirect  # includes references via groups
 ```
 
-### Sessão (publish, discard)
+### Session (publish, discard)
 
-O Check Point trabalha em modo transacional: `add`/`set`/`delete` ficam
-pendentes até você **publicar**.
+Check Point works transactionally: `add`/`set`/`delete` stay pending
+until you **publish**.
 
 ```sh
-./cpcli session show      # mostra número de mudanças pendentes
-./cpcli session publish   # efetiva
-./cpcli session discard   # cancela tudo pendente
+./cpcli session show      # show number of pending changes
+./cpcli session publish   # commit
+./cpcli session discard   # cancel everything pending
 ```
 
-### Raw — qualquer comando da API
+### Raw — any API command
 
-Para qualquer comando da Management API que o CLI ainda não expõe
-diretamente:
+For any Management API command the CLI does not expose directly:
 
 ```sh
-# Comando com corpo JSON inline
+# Inline JSON body
 ./cpcli raw show-object --json '{"uid":"xxx","details-level":"full"}'
 
-# De um arquivo
+# From a file
 ./cpcli raw add-time --file config/time-obj.json
 
-# Comando de listagem paginada
+# Paginated listing command
 ./cpcli raw show-security-zones --list --container-key objects
 
-# Task assíncrona sem esperar (retorna task-id)
+# Async task without waiting (returns the task-id)
 ./cpcli raw install-policy --no-wait \
     --json '{"policy-package":"Standard","targets":["gw"]}'
 ```
 
-### Perfis (multi-servidor)
+### Profiles (multi-server)
 
-Para gerenciar vários management servers:
+To manage multiple Management servers:
 
 ```sh
-./cpcli --profile prod  login --server 10.0.0.1 --user admin
-./cpcli --profile lab   login --server 192.0.2.10 --user admin --insecure
+./cpcli --profile prod login --server 10.0.0.1 --user admin
+./cpcli --profile lab  login --server 192.0.2.10 --user admin --insecure
 
 ./cpcli --profile prod rule list --layer Network
 ./cpcli --profile lab  rule list --layer Network
 ```
 
-Cada perfil tem seu próprio `session-<profile>.json`.
+Each profile owns its `session-<profile>.json`.
 
-### Autocomplete de shell
+### Shell autocompletion
 
 ```sh
-./cpcli completion bash > /etc/bash_completion.d/cpcli   # ou zsh, fish, powershell
+./cpcli completion bash > /etc/bash_completion.d/cpcli   # or zsh, fish, powershell
 ```
 
 ---
 
-## Guia do app desktop
+## Desktop app guide
 
-Após `wails build -tags webkit2_41`, o binário é
-`desktop/build/bin/cpcli-desktop`. Abre uma janela nativa (WebKitGTK no
+After `wails build -tags webkit2_41`, the binary is
+`desktop/build/bin/cpcli-desktop`. It opens a native window (WebKitGTK on
 Linux).
 
 **Layout:**
-- **Sidebar esquerda:** Dashboard, Gateways & Servers, Security Policies
-  (Access Control, NAT, Threat Prevention, HTTPS Inspection, Instalar
-  política), Monitoramento (Logs & Monitor), VPN Communities, Object
-  Explorer (hosts, networks, groups, services, ...).
-- **Topo:** indicador do server conectado, contador de mudanças pendentes,
-  botões **Publish** e **Discard**, toggle de tema escuro/claro.
+- **Left sidebar:** Dashboard, Gateways & Servers, Security Policies
+  (Access Control, NAT, Threat Prevention, HTTPS Inspection, Install
+  Policy), Monitoring (Logs & Monitor), VPN Communities, Object Explorer
+  (hosts, networks, groups, services, ...).
+- **Top bar:** connected server indicator, pending changes counter,
+  **Publish** and **Discard** buttons, dark/light theme toggle.
 
-**Fluxo típico** (mesmo do CLI): fazer mudança → topo mostra "N mudanças
-pendentes" → clicar **Publish** → ir em **Instalar política** para efetivar
-no gateway.
+**Typical flow** (same as the CLI): make a change → top bar shows "N
+pending changes" → click **Publish** → go to **Install Policy** to apply
+on the gateway.
 
-**Recursos que valem destacar:**
-- **Object picker estilo SmartConsole** em campos de regra (origem/destino/
-  serviço): busca por texto, categorias, criação inline de objeto sem sair
-  do diálogo.
-- **Get Interfaces** na aba Interfaces do gateway: reproduz o botão do
-  SmartConsole que sincroniza a topologia via SIC.
-- **Auto-classify topologia:** um clique marca todas as interfaces como
-  `internal` com "rede pela máscara"; depois você marca manualmente a
-  Internet-facing como `external`.
-- **Logs & Monitor:** lê `fw log` direto do gateway via `run-script` —
-  funciona em Standalone (sem Smart-1 log server). Tabela clicável, expande
-  linha com detalhe completo abaixo (estilo GCP Cloud Logging). Coluna
-  dedicada de NAT traduzido.
-- **Anti-spoofing por interface** com ação (`prevent`/`detect`) e tracking
-  (`none`/`log`/`alert`) sem os footguns do `set-simple-gateway` original
-  (que sobrescreve toda a array de interfaces).
+**Highlights:**
+- **SmartConsole-style Object Picker** on rule fields (source/destination/
+  service): text search, categories, inline object creation without
+  leaving the dialog.
+- **Get Interfaces** on the gateway's Interfaces tab: mirrors the
+  SmartConsole button that syncs topology via SIC.
+- **Auto-classify topology:** one click marks every interface as
+  `internal` with "network by mask"; you then manually flip the
+  Internet-facing one to `external`.
+- **Logs & Monitor:** reads `fw log` directly from the gateway via
+  `run-script` — works on Standalone installs (no Smart-1 Log Server
+  needed). Row-expandable table with full detail (GCP Cloud Logging
+  style). Dedicated column for the NAT-translated tuple.
+- **Per-interface anti-spoofing** with action (`prevent`/`detect`) and
+  tracking (`none`/`log`/`alert`), free from the `set-simple-gateway`
+  footguns (which overwrite the entire interfaces array).
 
 ---
 
-## Estrutura do projeto
+## Project layout
 
 ```
-cmd/cpcli/              # entrypoint do CLI
+cmd/cpcli/              # CLI entrypoint
 internal/
-  cli/                  # subcomandos cobra (login, rule, nat, host, ...)
-  mgmt/                 # core: cliente, sessão, fingerprint pinning,
-                        # error extraction, rulebase resolver com dicionário
-service/                # fachada bindable (Login, ListObjects, AddRule, ...)
-                        # é o que o desktop consome via Wails bindings
+  cli/                  # cobra subcommands (login, rule, nat, host, ...)
+  mgmt/                 # core: client, session, fingerprint pinning,
+                        # error extraction, rulebase resolver with dictionary
+service/                # bindable facade (Login, ListObjects, AddRule, ...)
+                        # this is what the desktop consumes via Wails bindings
 desktop/
-  main.go               # app Wails; binda service.Service
-  wails.json            # config do Wails
+  main.go               # Wails app; binds service.Service
+  wails.json            # Wails config
   frontend/             # Vite + React + TS + Tailwind + shadcn/ui
     src/
-      pages/            # uma page por tela (AccessRulesPage, NatPage, ...)
+      pages/            # one page per screen (AccessRulesPage, NatPage, ...)
       components/
         shared/         # ObjectPicker, RulebaseTable, EntityFormDialog, ...
-        ui/             # wrappers shadcn (Button, Dialog, Table, ...)
+        ui/             # shadcn wrappers (Button, Dialog, Table, ...)
       lib/
-        wailsService.ts # interface CpService + bindings reais
-        mockService.ts  # mock in-memory para dev sem firewall
+        wailsService.ts # CpService interface + real bindings
+        mockService.ts  # in-memory mock for dev without a firewall
       config/           # objectKinds, objectCategories, nav
       stores/           # zustand (session)
 ```
 
 ---
 
-## Testes
+## Tests
 
 ```sh
-# Unit tests do core e da fachada
+# Unit tests for the core and the facade
 go test ./...
 
-# Com race detector
+# With the race detector
 go test -race ./...
 
-# Só pacote específico
+# Single package
 go test -v ./internal/mgmt
 go test -v ./service
 ```
 
-O core (`internal/mgmt`) tem uma interface `caller` que permite injetar
-um SDK fake — muitos testes exercitam paginação, extração de erro e
-sessão sem precisar de servidor.
+The core (`internal/mgmt`) exposes a `caller` interface so a fake SDK can
+be injected — most tests exercise pagination, error extraction and
+session handling without a live server.
 
 ---
 
-## Contribuindo
+## Contributing
 
-- Issues e PRs bem-vindos em qualquer parte (CLI, service, desktop).
-- Ao adicionar operação nova: implementar em `service/service.go` primeiro
-  (para reuso), depois expor no CLI (`internal/cli/`) e opcionalmente no
-  desktop (`desktop/frontend/`).
-- `go fmt ./... && go vet ./...` deve passar limpo.
-- Se alterar assinatura de método em `service.Service`, rode
-  `wails generate module -tags webkit2_41` dentro de `desktop/` para
-  regenerar os bindings TS.
-
----
-
-## Licença
-
-MIT — veja [LICENSE](LICENSE).
+- Issues and PRs are welcome for any part (CLI, service, desktop).
+- When adding a new operation: implement in `service/service.go` first
+  (for reuse), then expose it in the CLI (`internal/cli/`) and optionally
+  in the desktop (`desktop/frontend/`).
+- `go fmt ./... && go vet ./...` must be clean.
+- If you change a `service.Service` method signature, run
+  `wails generate module -tags webkit2_41` inside `desktop/` to regenerate
+  the TS bindings.
 
 ---
 
-## Aviso legal / Disclaimer
+## License
 
-Este projeto é uma iniciativa **independente e não oficial**. Não é afiliado,
-patrocinado, endossado ou de qualquer forma associado à **Check Point Software
-Technologies Ltd.**
+MIT — see [LICENSE](LICENSE).
 
-*"Check Point"*, *"SmartConsole"* e demais nomes de produto são marcas
-registradas ou marcas comerciais da Check Point Software Technologies Ltd.
-São usados aqui apenas em caráter descritivo/nominativo (*nominative fair
-use*), para indicar compatibilidade com a **Check Point Management API**
-oficial e documentada — sem intenção de causar confusão sobre a origem ou
-autoria.
+---
 
-**Componentes de terceiros:**
+## Disclaimer
+
+This is an **independent, unofficial** project. It is not affiliated with,
+sponsored by, endorsed by, or otherwise associated with **Check Point
+Software Technologies Ltd.**
+
+*"Check Point"*, *"SmartConsole"* and other product names are trademarks
+or registered trademarks of Check Point Software Technologies Ltd. They
+are used here descriptively (nominative fair use) to indicate
+compatibility with the official, documented **Check Point Management
+API** — with no intent to cause confusion about origin or authorship.
+
+**Third-party components:**
 
 - [`github.com/CheckPointSW/cp-mgmt-api-go-sdk`](https://github.com/CheckPointSW/cp-mgmt-api-go-sdk) —
-  SDK oficial da Check Point, licenciado sob **Apache License 2.0**.
-  Consumido como dependência Go, sem redistribuição.
+  Check Point's official SDK, licensed under **Apache License 2.0**.
+  Consumed as a Go module dependency; not redistributed.
 - [Wails](https://wails.io), [React](https://react.dev),
   [Tailwind CSS](https://tailwindcss.com), [shadcn/ui](https://ui.shadcn.com),
-  [lucide-react](https://lucide.dev) — todos com licenças permissivas
-  (MIT/similar).
+  [lucide-react](https://lucide.dev) — all under permissive licenses
+  (MIT or similar).
 
-Se você é da Check Point e prefere que este projeto seja renomeado ou tenha
-qualquer ajuste, abra uma issue no repositório.
-
+If you are from Check Point and would prefer any part of this project to
+be renamed or adjusted, please open an issue on the repository.

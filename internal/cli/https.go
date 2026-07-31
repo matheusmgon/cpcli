@@ -13,7 +13,7 @@ import (
 func newHTTPSCmd() *cobra.Command {
 	root := &cobra.Command{
 		Use:   "https",
-		Short: "HTTPS Inspection (regras e camadas)",
+		Short: "HTTPS Inspection (rules and layers)",
 	}
 	root.AddCommand(
 		newHTTPSRuleCmd(),
@@ -25,7 +25,7 @@ func newHTTPSCmd() *cobra.Command {
 func newHTTPSRuleCmd() *cobra.Command {
 	root := &cobra.Command{
 		Use:   "rule",
-		Short: "Regras de HTTPS Inspection (https-rule) em uma camada",
+		Short: "HTTPS Inspection rules (https-rule) in a layer",
 	}
 	root.AddCommand(
 		newHTTPSRuleAddCmd(),
@@ -42,10 +42,10 @@ func newHTTPSRuleAddCmd() *cobra.Command {
 	var fields []string
 	cmd := &cobra.Command{
 		Use:   "add",
-		Short: "Adiciona uma regra em uma camada de HTTPS Inspection",
+		Short: "Add a rule in an HTTPS Inspection layer",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if layer == "" {
-				return fmt.Errorf("--layer é obrigatório")
+				return fmt.Errorf("--layer is required")
 			}
 			payload, err := parseFields(fields)
 			if err != nil {
@@ -59,10 +59,10 @@ func newHTTPSRuleAddCmd() *cobra.Command {
 			return callAndPrint("add-https-rule", payload, true, true)
 		},
 	}
-	cmd.Flags().StringVar(&layer, "layer", "", "Nome/UID da camada de HTTPS Inspection (obrigatório)")
-	cmd.Flags().StringVar(&position, "position", "top", `Posição: "top", "bottom", número ou "above:<uid>"/"below:<uid>"`)
-	cmd.Flags().StringVar(&name, "name", "", "Nome da regra")
-	cmd.Flags().StringArrayVar(&fields, "field", nil, `Campo chave=valor (ex: --field source='["any"]' --field action='"Inspect"')`)
+	cmd.Flags().StringVar(&layer, "layer", "", "HTTPS Inspection layer name/UID (required)")
+	cmd.Flags().StringVar(&position, "position", "top", `Position: "top", "bottom", a number, or "above:<uid>"/"below:<uid>"`)
+	cmd.Flags().StringVar(&name, "name", "", "Rule name")
+	cmd.Flags().StringArrayVar(&fields, "field", nil, `key=value field (e.g. --field source='["any"]' --field action='"Inspect"')`)
 	return cmd
 }
 
@@ -76,10 +76,10 @@ func newHTTPSRuleShowCmd() *cobra.Command {
 	var name, uid, layer string
 	cmd := &cobra.Command{
 		Use:   "show",
-		Short: "Mostra uma regra de HTTPS Inspection (--layer obrigatório)",
+		Short: "Show an HTTPS Inspection rule (--layer required)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if layer == "" {
-				return fmt.Errorf(`--layer é obrigatório (show-https-rule exige a camada mesmo com --uid)`)
+				return fmt.Errorf(`--layer is required (show-https-rule needs the layer even with --uid)`)
 			}
 			payload, err := nameOrUIDPayload(name, uid)
 			if err != nil {
@@ -89,9 +89,9 @@ func newHTTPSRuleShowCmd() *cobra.Command {
 			return callAndPrint("show-https-rule", payload, false, false)
 		},
 	}
-	cmd.Flags().StringVar(&name, "name", "", "Nome da regra")
-	cmd.Flags().StringVar(&uid, "uid", "", "UID da regra")
-	cmd.Flags().StringVar(&layer, "layer", "", "Camada da regra (obrigatório)")
+	cmd.Flags().StringVar(&name, "name", "", "Rule name")
+	cmd.Flags().StringVar(&uid, "uid", "", "Rule UID")
+	cmd.Flags().StringVar(&layer, "layer", "", "Rule layer (required)")
 	return cmd
 }
 
@@ -100,10 +100,10 @@ func newHTTPSRuleSetCmd() *cobra.Command {
 	var fields []string
 	cmd := &cobra.Command{
 		Use:   "set",
-		Short: "Altera uma regra de HTTPS Inspection (--layer obrigatório)",
+		Short: "Update an HTTPS Inspection rule (--layer required)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if layer == "" {
-				return fmt.Errorf(`--layer é obrigatório (set-https-rule exige a camada mesmo com --uid)`)
+				return fmt.Errorf(`--layer is required (set-https-rule needs the layer even with --uid)`)
 			}
 			payload, err := nameOrUIDPayload(name, uid)
 			if err != nil {
@@ -120,10 +120,10 @@ func newHTTPSRuleSetCmd() *cobra.Command {
 			return callAndPrint("set-https-rule", payload, true, true)
 		},
 	}
-	cmd.Flags().StringVar(&name, "name", "", "Nome da regra")
-	cmd.Flags().StringVar(&uid, "uid", "", "UID da regra")
-	cmd.Flags().StringVar(&layer, "layer", "", "Camada da regra (obrigatório)")
-	cmd.Flags().StringArrayVar(&fields, "field", nil, "Campo chave=valor a alterar (repetível)")
+	cmd.Flags().StringVar(&name, "name", "", "Rule name")
+	cmd.Flags().StringVar(&uid, "uid", "", "Rule UID")
+	cmd.Flags().StringVar(&layer, "layer", "", "Rule layer (required)")
+	cmd.Flags().StringArrayVar(&fields, "field", nil, "key=value field to modify (repeatable)")
 	return cmd
 }
 
@@ -131,10 +131,10 @@ func newHTTPSRuleDeleteCmd() *cobra.Command {
 	var name, uid, layer string
 	cmd := &cobra.Command{
 		Use:   "delete",
-		Short: "Apaga uma regra de HTTPS Inspection (--layer obrigatório)",
+		Short: "Delete an HTTPS Inspection rule (--layer required)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if layer == "" {
-				return fmt.Errorf(`--layer é obrigatório (delete-https-rule exige a camada mesmo com --uid)`)
+				return fmt.Errorf(`--layer is required (delete-https-rule needs the layer even with --uid)`)
 			}
 			payload, err := nameOrUIDPayload(name, uid)
 			if err != nil {
@@ -144,9 +144,9 @@ func newHTTPSRuleDeleteCmd() *cobra.Command {
 			return callAndPrint("delete-https-rule", payload, true, true)
 		},
 	}
-	cmd.Flags().StringVar(&name, "name", "", "Nome da regra")
-	cmd.Flags().StringVar(&uid, "uid", "", "UID da regra")
-	cmd.Flags().StringVar(&layer, "layer", "", "Camada da regra (obrigatório)")
+	cmd.Flags().StringVar(&name, "name", "", "Rule name")
+	cmd.Flags().StringVar(&uid, "uid", "", "Rule UID")
+	cmd.Flags().StringVar(&layer, "layer", "", "Rule layer (required)")
 	return cmd
 }
 
@@ -154,17 +154,17 @@ func newHTTPSRuleListCmd() *cobra.Command {
 	var layer, detailsLevel string
 	cmd := &cobra.Command{
 		Use:   "list",
-		Short: "Lista as regras (rulebase) de uma camada de HTTPS Inspection",
+		Short: "List the rules (rulebase) of an HTTPS Inspection layer",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if layer == "" {
-				return fmt.Errorf("--layer é obrigatório")
+				return fmt.Errorf("--layer is required")
 			}
 			payload := map[string]interface{}{"name": layer}
 			return listRulebaseAndPrint("show-https-rulebase", detailsLevel, "rulebase", payload)
 		},
 	}
-	cmd.Flags().StringVar(&layer, "layer", "", "Nome/UID da camada (obrigatório)")
-	cmd.Flags().StringVar(&detailsLevel, "details-level", "standard", "Nível de detalhe: uid | standard | full")
+	cmd.Flags().StringVar(&layer, "layer", "", "Layer name/UID (required)")
+	cmd.Flags().StringVar(&detailsLevel, "details-level", "standard", "Detail level: uid | standard | full")
 	return cmd
 }
 
@@ -172,11 +172,11 @@ func newHTTPSLayersCmd() *cobra.Command {
 	var detailsLevel string
 	cmd := &cobra.Command{
 		Use:   "layers",
-		Short: "Lista as camadas de HTTPS Inspection disponíveis",
+		Short: "List the available HTTPS Inspection layers",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return listAndPrint("show-https-layers", detailsLevel, "https-layers", map[string]interface{}{})
 		},
 	}
-	cmd.Flags().StringVar(&detailsLevel, "details-level", "standard", "Nível de detalhe: uid | standard | full")
+	cmd.Flags().StringVar(&detailsLevel, "details-level", "standard", "Detail level: uid | standard | full")
 	return cmd
 }

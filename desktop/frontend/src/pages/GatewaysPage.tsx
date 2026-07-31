@@ -48,8 +48,8 @@ const TOPOLOGIES = ["automatic", "external", "internal"] as const;
  * net mask" is the safe default for a LAN interface (uses the interface's
  * own IP/mask to define what's behind it). */
 const BEHIND_OPTIONS: { value: string; label: string }[] = [
-  { value: "not defined", label: "não definida" },
-  { value: "network defined by the interface ip and net mask", label: "rede pela máscara" },
+  { value: "not defined", label: "Not defined" },
+  { value: "network defined by the interface ip and net mask", label: "Network by mask" },
 ];
 
 /** Software blade boolean fields on a simple-gateway object — confirmed
@@ -107,21 +107,21 @@ function InterfacesTab({ gateway, open }: { gateway: string | null; open: boolea
     mutationFn: ({ ifaceName, fields }: { ifaceName: string; fields: JsonRecord }) =>
       getService().setGatewayInterface(gateway ?? "", ifaceName, fields),
     onSuccess: () => {
-      toast.success("Interface atualizada");
+      toast.success("Interface updated");
       queryClient.invalidateQueries({ queryKey });
       useSessionStore.getState().markPending(1);
     },
-    onError: (error) => toast.error(`Falha ao atualizar interface: ${getErrorMessage(error)}`),
+    onError: (error) => toast.error(`Failed to update interface: ${getErrorMessage(error)}`),
   });
 
   const refreshTopologyMutation = useMutation({
     mutationFn: () => getService().refreshGatewayTopology(gateway ?? ""),
     onSuccess: () => {
-      toast.success("Topologia sincronizada — interfaces relidas do gateway via SIC");
+      toast.success("Topology synchronized — interfaces re-read from the gateway via SIC");
       queryClient.invalidateQueries({ queryKey });
       useSessionStore.getState().markPending(1);
     },
-    onError: (error) => toast.error(`Falha em Get Interfaces: ${getErrorMessage(error)}`),
+    onError: (error) => toast.error(`Get Interfaces failed: ${getErrorMessage(error)}`),
   });
 
   const autoClassifyMutation = useMutation({
@@ -141,12 +141,12 @@ function InterfacesTab({ gateway, open }: { gateway: string | null; open: boolea
     },
     onSuccess: () => {
       toast.success(
-        "Topologia auto-classificada. Marque manualmente a interface voltada pra Internet como 'external'.",
+        "Topology auto-classified. Manually mark the Internet-facing interface as 'external'.",
       );
       queryClient.invalidateQueries({ queryKey });
       useSessionStore.getState().markPending(data.length);
     },
-    onError: (error) => toast.error(`Falha ao auto-classificar: ${getErrorMessage(error)}`),
+    onError: (error) => toast.error(`Failed to auto-classify: ${getErrorMessage(error)}`),
   });
 
   function toggleAntiSpoofing(ifaceName: string, checked: boolean) {
@@ -186,9 +186,9 @@ function InterfacesTab({ gateway, open }: { gateway: string | null; open: boolea
   return (
     <div>
       <p className="mb-3 text-sm text-muted">
-        Ative o anti-spoofing por interface e ajuste ação/rastreamento. Se acabou de habilitar
-        uma interface no Gaia (ex.: Eth2), clique em <strong>Get Interfaces</strong> abaixo para
-        o management re-ler as interfaces do gateway via SIC.
+        Enable anti-spoofing per interface and tune action/tracking. If you just enabled
+        an interface in Gaia (e.g. Eth2), click <strong>Get Interfaces</strong> below so
+        the management server re-reads interfaces from the gateway via SIC.
       </p>
 
       <div className="mb-3 flex justify-end gap-2">
@@ -197,9 +197,9 @@ function InterfacesTab({ gateway, open }: { gateway: string | null; open: boolea
           size="sm"
           onClick={() => autoClassifyMutation.mutate()}
           disabled={!gateway || data.length === 0 || autoClassifyMutation.isPending}
-          title="Marca todas as interfaces como internal com rede pela máscara. Depois marque a Internet-facing como external."
+          title="Marks all interfaces as internal with network-by-mask. Then mark the Internet-facing one as external."
         >
-          {autoClassifyMutation.isPending ? "Classificando..." : "Auto-classify topologia"}
+          {autoClassifyMutation.isPending ? "Classifying..." : "Auto-classify topology"}
         </Button>
         <Button
           variant="outline"
@@ -208,23 +208,23 @@ function InterfacesTab({ gateway, open }: { gateway: string | null; open: boolea
           disabled={!gateway || refreshTopologyMutation.isPending}
         >
           <DownloadCloud className="size-4" />
-          {refreshTopologyMutation.isPending ? "Sincronizando..." : "Get Interfaces"}
+          {refreshTopologyMutation.isPending ? "Syncing..." : "Get Interfaces"}
         </Button>
       </div>
 
       {data.length === 0 ? (
-          <EmptyState title={isLoading ? "Carregando..." : "Nenhuma interface encontrada"} />
+          <EmptyState title={isLoading ? "Loading..." : "No interfaces found"} />
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nome</TableHead>
+                <TableHead>Name</TableHead>
                 <TableHead>IP</TableHead>
-                <TableHead>Topologia</TableHead>
-                <TableHead>Rede atrás</TableHead>
+                <TableHead>Topology</TableHead>
+                <TableHead>Network behind</TableHead>
                 <TableHead>Anti-spoof</TableHead>
-                <TableHead>Ação</TableHead>
-                <TableHead>Rastreamento</TableHead>
+                <TableHead>Action</TableHead>
+                <TableHead>Tracking</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -284,7 +284,7 @@ function InterfacesTab({ gateway, open }: { gateway: string | null; open: boolea
                         disabled={updateMutation.isPending}
                         onChange={(e) => toggleAntiSpoofing(ifaceName, e.target.checked)}
                         className="size-4 rounded border-border accent-accent"
-                        aria-label={`Anti-spoofing em ${ifaceName}`}
+                        aria-label={`Anti-spoofing on ${ifaceName}`}
                       />
                     </TableCell>
                     <TableCell>
@@ -355,15 +355,15 @@ function BladesTab({ gateway, open }: { gateway: string | null; open: boolean })
   const updateMutation = useMutation({
     mutationFn: (fields: JsonRecord) => getService().setGatewayBlades(gateway ?? "", fields),
     onSuccess: () => {
-      toast.success("Blade atualizada");
+      toast.success("Blade updated");
       queryClient.invalidateQueries({ queryKey });
       useSessionStore.getState().markPending(1);
     },
-    onError: (error) => toast.error(`Falha ao atualizar blade: ${getErrorMessage(error)}`),
+    onError: (error) => toast.error(`Failed to update blade: ${getErrorMessage(error)}`),
   });
 
   if (Object.keys(data).length === 0) {
-    return <EmptyState title={isLoading ? "Carregando..." : "Nenhuma informação de blade encontrada"} />;
+    return <EmptyState title={isLoading ? "Loading..." : "No blade information found"} />;
   }
 
   return (
@@ -404,7 +404,7 @@ function GatewayDialog({
       <DialogContent className="max-w-5xl">
         <DialogHeader>
           <DialogTitle>{gateway}</DialogTitle>
-          <DialogDescription>Interfaces (anti-spoofing) e blades habilitadas neste gateway.</DialogDescription>
+          <DialogDescription>Interfaces (anti-spoofing) and blades enabled on this gateway.</DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="interfaces">
@@ -436,8 +436,8 @@ export function GatewaysPage() {
   });
 
   const columns: ColumnDef<JsonRecord>[] = [
-    { accessorKey: "name", header: "Nome" },
-    { id: "type", header: "Tipo", cell: ({ row }) => String(row.original.type ?? "") },
+    { accessorKey: "name", header: "Name" },
+    { id: "type", header: "Type", cell: ({ row }) => String(row.original.type ?? "") },
     {
       id: "ipv4-address",
       header: "IPv4",
@@ -445,7 +445,7 @@ export function GatewaysPage() {
     },
     {
       id: "actions",
-      header: "Ações",
+      header: "Actions",
       cell: ({ row }) => {
         const name = typeof row.original.name === "string" ? row.original.name : "";
         return (
@@ -456,7 +456,7 @@ export function GatewaysPage() {
             disabled={!name}
           >
             <Network className="size-4" />
-            Ver detalhes
+            View details
           </Button>
         );
       },
@@ -467,18 +467,18 @@ export function GatewaysPage() {
     <div>
       <PageHeader
         title="Gateways"
-        subtitle="Somente leitura."
+        subtitle="Read-only."
         actions={
           <Button
             variant="outline"
             onClick={() => queryClient.invalidateQueries({ queryKey: ["gateways"] })}
           >
-            <RefreshCw /> Atualizar
+            <RefreshCw /> Refresh
           </Button>
         }
       />
 
-      <DataTable columns={columns} data={data} searchPlaceholder="Buscar gateway..." />
+      <DataTable columns={columns} data={data} searchPlaceholder="Search gateway..." />
 
       <GatewayDialog
         gateway={interfacesGateway}

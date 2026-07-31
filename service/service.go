@@ -21,7 +21,7 @@ import (
 
 // ErrNotConnected is returned by every operation that needs a session when no
 // successful Login has happened yet (or after Logout).
-var ErrNotConnected = errors.New("não conectado — faça login primeiro")
+var ErrNotConnected = errors.New("not connected — run login first")
 
 // apiClient is the slice of *mgmt.Client the facade depends on. Expressing it
 // as an interface lets tests drive Service with a fake, without a live server.
@@ -151,7 +151,7 @@ func (s *Service) ObjectKinds() []string {
 func resolveKind(kind string) (objectCommands, error) {
 	oc, ok := objectRegistry[kind]
 	if !ok {
-		return objectCommands{}, fmt.Errorf("tipo de objeto desconhecido: %q", kind)
+		return objectCommands{}, fmt.Errorf("unknown object type: %q", kind)
 	}
 	return oc, nil
 }
@@ -200,7 +200,7 @@ func (s *Service) AddObject(kind string, fields map[string]interface{}) (map[str
 		return nil, err
 	}
 	if name, _ := fields["name"].(string); name == "" {
-		return nil, errors.New("o campo 'name' é obrigatório")
+		return nil, errors.New("the 'name' field is required")
 	}
 	c, err := s.conn()
 	if err != nil {
@@ -670,7 +670,7 @@ func (s *Service) SetGatewayInterface(gateway, ifaceName string, fields map[stri
 	ifaces, _ := data["interfaces"].([]interface{})
 	updated, found := mgmt.MergeGatewayInterface(ifaces, ifaceName, fields)
 	if !found {
-		return nil, fmt.Errorf("interface %q não encontrada no gateway %q", ifaceName, gateway)
+		return nil, fmt.Errorf("interface %q not found on gateway %q", ifaceName, gateway)
 	}
 	return c.Call("set-simple-gateway", map[string]interface{}{
 		"name":       gateway,
@@ -705,7 +705,7 @@ var vpnRegistry = map[string]objectCommands{
 func resolveVPN(kind string) (objectCommands, error) {
 	oc, ok := vpnRegistry[kind]
 	if !ok {
-		return objectCommands{}, fmt.Errorf("tipo de comunidade VPN desconhecido: %q", kind)
+		return objectCommands{}, fmt.Errorf("unknown VPN community type: %q", kind)
 	}
 	return oc, nil
 }
@@ -744,7 +744,7 @@ func (s *Service) AddVpnCommunity(kind string, fields map[string]interface{}) (m
 		return nil, err
 	}
 	if name, _ := fields["name"].(string); name == "" {
-		return nil, errors.New("o campo 'name' é obrigatório")
+		return nil, errors.New("the 'name' field is required")
 	}
 	c, err := s.conn()
 	if err != nil {
@@ -900,12 +900,12 @@ func (s *Service) ReadFirewallLogs(gateway, filter string, limit int) ([]map[str
 	}
 	tasks, _ := launch["tasks"].([]interface{})
 	if len(tasks) == 0 {
-		return nil, errors.New("run-script não retornou task-id")
+		return nil, errors.New("run-script did not return task-id")
 	}
 	first, _ := tasks[0].(map[string]interface{})
 	taskID, _ := first["task-id"].(string)
 	if taskID == "" {
-		return nil, errors.New("run-script sem task-id")
+		return nil, errors.New("run-script without task-id")
 	}
 
 	// Poll show-task with details-level=full until done. Cap at 60s;
@@ -914,7 +914,7 @@ func (s *Service) ReadFirewallLogs(gateway, filter string, limit int) ([]map[str
 	var stdout, stderr string
 	for {
 		if time.Now().After(deadline) {
-			return nil, fmt.Errorf("run-script timeout esperando task %s", taskID)
+			return nil, fmt.Errorf("run-script timeout waiting for task %s", taskID)
 		}
 		res, err := c.Call("show-task", map[string]interface{}{
 			"task-id":       taskID,
@@ -925,7 +925,7 @@ func (s *Service) ReadFirewallLogs(gateway, filter string, limit int) ([]map[str
 		}
 		taskArr, _ := res["tasks"].([]interface{})
 		if len(taskArr) == 0 {
-			return nil, errors.New("show-task retornou vazio")
+			return nil, errors.New("show-task returned empty")
 		}
 		t, _ := taskArr[0].(map[string]interface{})
 		status, _ := t["status"].(string)
@@ -948,7 +948,7 @@ func (s *Service) ReadFirewallLogs(gateway, filter string, limit int) ([]map[str
 			}
 		}
 		if status != "succeeded" {
-			return nil, fmt.Errorf("fw log falhou (status=%s): %s", status, strings.TrimSpace(stderr))
+			return nil, fmt.Errorf("fw log failed (status=%s): %s", status, strings.TrimSpace(stderr))
 		}
 		break
 	}

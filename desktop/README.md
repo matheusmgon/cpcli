@@ -1,114 +1,120 @@
 # cpcli desktop (Wails)
 
-Cliente **desktop** para o Check Point Management API — uma UI gráfica sobre o
-mesmo core do `cpcli`, com o objetivo de oferecer em Linux/macOS a experiência
-que o SmartConsole dá no Windows.
+**Desktop** client for the Check Point Management API — a graphical UI on
+top of the same core as `cpcli`, aiming to offer on Linux/macOS the
+experience SmartConsole gives on Windows.
 
-Este é um **módulo Go separado** do core (`module cpcli/desktop`, com
-`replace cpcli => ../`). Isso mantém o `go build ./...` da raiz sempre compilável
-mesmo sem as dependências de GUI — só este módulo precisa delas.
+This is a **separate Go module** from the core (`module cpcli/desktop`,
+with `replace cpcli => ../`). That way `go build ./...` at the repo root
+stays compilable even without the GUI dependencies — only this module
+needs them.
 
-## Arquitetura
+## Architecture
 
 ```
-desktop/main.go          → app Wails; binda service.Service
+desktop/main.go          → Wails app; binds service.Service
 desktop/frontend/        → Vite + React + TypeScript + Tailwind v4 + shadcn/ui
-  src/lib/wailsService.ts  → interface CpService; usa os bindings reais do
-                              Wails ou cai num mock (fora do shell nativo)
-  src/lib/mockService.ts   → mock com dados de exemplo, usado por vite dev/preview
-  wailsjs/                 → bindings gerados (wails generate module), gitignored
-  dist/                    → build do Vite, embedado via go:embed (gitignored,
-                              exceto dist/.gitkeep — placeholder pro embed não
-                              quebrar num checkout limpo antes do 1º build)
+  src/lib/wailsService.ts  → CpService interface; uses real Wails
+                              bindings or falls back to a mock (outside
+                              the native shell)
+  src/lib/mockService.ts   → mock with sample data, used by vite dev/preview
+  wailsjs/                 → generated bindings (wails generate module), gitignored
+  dist/                    → Vite build output, embedded via go:embed
+                              (gitignored, except dist/.gitkeep — placeholder
+                              so the embed does not fail on a fresh checkout
+                              before the first build)
         │  window.go.service.Service.*
         ▼
-cpcli/service            → fachada de UI (Login/ListObjects/Publish/…)
+cpcli/service            → UI-facing facade (Login/ListObjects/Publish/…)
         ▼
-cpcli/internal/mgmt      → core de transporte/sessão (compartilhado com o CLI)
+cpcli/internal/mgmt      → transport/session core (shared with the CLI)
 ```
 
-Direção visual: paleta azul-marinho corporativo, sidebar escura fixa nos
-dois temas claro/escuro, ícones lucide-react, dashboard de overview logo
-após o login.
+Visual direction: corporate navy-blue palette, dark sidebar fixed in
+both light and dark themes, lucide-react icons, overview dashboard right
+after login.
 
-### Regenerar os bindings do Wails
+### Regenerate the Wails bindings
 
-Sempre que a assinatura de algum método de `service.Service` mudar:
+Whenever a `service.Service` method signature changes:
 
 ```sh
 cd desktop
-wails generate module -tags webkit2_41   # a tag vale aqui também — o comando compila o projeto
+wails generate module -tags webkit2_41   # the tag applies here too — the command compiles the project
 ```
 
-Reescreve `frontend/wailsjs/go/service/Service.{js,d.ts}` e
-`frontend/wailsjs/go/models.ts`. Idempotente — pode rodar quantas vezes quiser.
+Rewrites `frontend/wailsjs/go/service/Service.{js,d.ts}` and
+`frontend/wailsjs/go/models.ts`. Idempotent — safe to run any number of
+times.
 
-### Rodar o frontend fora do shell nativo (iteração rápida)
+### Run the frontend outside the native shell (fast iteration)
 
 ```sh
 cd desktop/frontend
 npm install
-npm run dev       # vite dev server comum — usa o mock service (sem window.go)
-npm run build     # gera dist/, o que o Go embeda
-npm run preview   # serve o build de produção localmente (também em mock)
+npm run dev       # plain vite dev server — uses the mock service (no window.go)
+npm run build     # generates dist/, which Go embeds
+npm run preview   # serves the production build locally (also mocked)
 ```
 
-## Pré-requisitos
+## Requirements
 
 - Go 1.25+
-- Node 20+ (testado com Node 22) e npm
+- Node 20+ (tested with Node 22) and npm
 - **Wails CLI:**
   ```sh
   go install github.com/wailsapp/wails/v2/cmd/wails@latest
   ```
-- **Dependências de sistema (Linux/Fedora)** — a WebView do Wails:
+- **System dependencies (Linux/Fedora)** — the Wails WebView:
   ```sh
   sudo dnf install gtk3-devel webkit2gtk4.1-devel
   ```
   (Debian/Ubuntu: `sudo apt install libgtk-3-dev libwebkit2gtk-4.1-dev`)
-- Rode `wails doctor` para confirmar que o ambiente está completo.
+- Run `wails doctor` to check the environment.
 
 ## Build & run
 
-Distros modernas (Fedora 40+, etc.) só têm **webkit2gtk-4.1**; o Wails procura a
-4.0 por padrão. Passe a build tag `webkit2_41` para usar a 4.1 — isso vale
-também para `go build`/`go vet`/`wails generate module` neste módulo, não só
-`dev`/`build`:
+Modern distros (Fedora 40+, etc.) only ship **webkit2gtk-4.1**; Wails
+looks for 4.0 by default. Pass the `webkit2_41` build tag to use 4.1 —
+this applies to `go build`/`go vet`/`wails generate module` in this
+module too, not just `dev`/`build`:
 
 ```sh
 cd desktop
-go mod tidy                    # resolve/pina a versão do Wails e o replace do core
-wails dev -tags webkit2_41     # hot-reload de verdade (frontend:dev:serverUrl: auto)
-wails build -tags webkit2_41   # binário de produção em build/bin/ (frontend embedado)
+go mod tidy                    # resolves/pins the Wails version and the core replace
+wails dev -tags webkit2_41     # real hot-reload (frontend:dev:serverUrl: auto)
+wails build -tags webkit2_41   # production binary in build/bin/ (frontend embedded)
 ```
 
-Em sistemas que ainda tenham a webkit2gtk-4.0, a tag é dispensável
+On systems that still have webkit2gtk-4.0, the tag is optional
 (`wails dev` / `wails build`).
 
-**Requisito mínimo de WebKitGTK**: Tailwind v4 usa recursos de CSS (cascade
-layers, `@property`, `color-mix()`) que exigem WebKitGTK ~2.42+ (webkit2gtk-4.1
-em distros recentes). Distros muito antigas com webkit2gtk-4.0 (ex: Ubuntu
-22.04, WebKitGTK ~2.36) podem renderizar o tema quebrado.
+**Minimum WebKitGTK requirement:** Tailwind v4 uses CSS features (cascade
+layers, `@property`, `color-mix()`) that require WebKitGTK ~2.42+
+(webkit2gtk-4.1 on recent distros). Very old distros with webkit2gtk-4.0
+(e.g. Ubuntu 22.04, WebKitGTK ~2.36) may render the theme broken.
 
-## Segurança (npm audit)
+## Security (npm audit)
 
-`npm audit` acusa 1 advisory de severidade alta em `react-router`/`react-router-dom`
-(GHSA-qwww-vcr4-c8h2, CSRF bypass em **modo RSC**). Não se aplica aqui — este é
-um app client-side puro (Vite SPA num webview, `HashRouter`, sem framework
-mode/SSR/server actions), que é exatamente o modo que não é afetado. Não há
-correção publicada ainda dentro da faixa (ships na 8.3.0, ainda não lançada);
-versões mais antigas (`<7.12.0`) evitam esse advisory mas reintroduzem 4
-outros (open redirect XSS, injeção via SSR hydration, DoS de rota) já
-corrigidos nas versões atuais — por isso a escolha é ficar na mais recente.
+`npm audit` reports 1 high-severity advisory in
+`react-router`/`react-router-dom` (GHSA-qwww-vcr4-c8h2, CSRF bypass in
+**RSC mode**). It does not apply here — this is a pure client-side app
+(Vite SPA in a webview, `HashRouter`, no framework mode / SSR / server
+actions), which is exactly the mode that is not affected. No published
+fix within the range yet (ships in 8.3.0, not released); older versions
+(`<7.12.0`) avoid this advisory but reintroduce 4 others (open redirect
+XSS, SSR hydration injection, route DoS) already fixed in current
+versions — so the choice is to stay on the latest.
 
-## Estado
+## Status
 
-Cobre a superfície completa do `cpcli/service` hoje: login, dashboard de
-overview, CRUD dos 8 tipos de objeto simples (hosts, networks, groups,
+Covers the full `cpcli/service` surface today: login, overview
+dashboard, CRUD for the 8 simple object types (hosts, networks, groups,
 services TCP/UDP, address ranges, service groups, access roles), Access
-Control rules, NAT, Threat Prevention (regras + profiles), HTTPS Inspection,
-VPN (star/meshed), install/verify de política, leitura de gateways/packages,
-e anti-spoofing por interface de gateway — sempre com publish/discard
-explícitos, como no SmartConsole real. A sidebar segue a mesma agrupação do
-SmartConsole (Access Control + NAT + Threat Prevention + HTTPS Inspection sob
-"Security Policies", em vez de itens soltos).
+Control rules, NAT, Threat Prevention (rules + profiles), HTTPS
+Inspection, VPN (star/meshed), install/verify policy, gateway/package
+listings, and per-interface anti-spoofing on gateways — always with
+explicit publish/discard, like the real SmartConsole. The sidebar
+follows the same grouping as SmartConsole (Access Control + NAT + Threat
+Prevention + HTTPS Inspection under "Security Policies", instead of
+scattered top-level items).

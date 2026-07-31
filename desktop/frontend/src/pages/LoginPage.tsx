@@ -41,7 +41,7 @@ export function LoginPage() {
       setSession(session);
       navigate("/dashboard");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao conectar");
+      toast.error(err instanceof Error ? err.message : "Failed to connect");
     } finally {
       setSubmitting(false);
     }
@@ -54,7 +54,7 @@ export function LoginPage() {
         size="icon"
         onClick={toggleTheme}
         className="absolute right-6 top-6"
-        title="Alternar tema"
+        title="Toggle theme"
       >
         {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
       </Button>
@@ -65,12 +65,12 @@ export function LoginPage() {
             <ShieldCheck className="size-5 text-accent" />
           </div>
           <h1 className="text-lg font-semibold tracking-tight">CheckPoint Console</h1>
-          <p className="text-sm text-muted">Conecte-se ao Security Management Server</p>
+          <p className="text-sm text-muted">Connect to the Security Management Server</p>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="server">Servidor</Label>
+            <Label htmlFor="server">Server</Label>
             <Input
               id="server"
               value={server}
@@ -82,7 +82,7 @@ export function LoginPage() {
 
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="user">Usuário</Label>
+              <Label htmlFor="user">User</Label>
               <Input
                 id="user"
                 value={user}
@@ -92,7 +92,7 @@ export function LoginPage() {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="port">Porta</Label>
+              <Label htmlFor="port">Port</Label>
               <Input
                 id="port"
                 type="number"
@@ -105,7 +105,7 @@ export function LoginPage() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="password">Senha</Label>
+            <Label htmlFor="password">Password</Label>
             <Input
               id="password"
               type="password"
@@ -123,11 +123,11 @@ export function LoginPage() {
               onChange={(e) => setInsecure(e.target.checked)}
               className="size-3.5 rounded border-border accent-accent"
             />
-            Ignorar verificação TLS
+            Ignore TLS verification
           </label>
 
           <Button type="submit" className="mt-2" disabled={submitting}>
-            {submitting ? "Conectando..." : "Conectar"}
+            {submitting ? "Connecting..." : "Connect"}
           </Button>
         </form>
       </div>

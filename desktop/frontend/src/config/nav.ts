@@ -57,11 +57,11 @@ export const navGroups: NavGroup[] = [
       { label: "NAT", to: "/nat", icon: Shuffle },
       { label: "Threat Prevention", to: "/threat-prevention", icon: ShieldAlert },
       { label: "HTTPS Inspection", to: "/https-inspection", icon: Lock },
-      { label: "Instalar política", to: "/install-policy", icon: Rocket },
+      { label: "Install Policy", to: "/install-policy", icon: Rocket },
     ],
   },
   {
-    title: "Monitoramento",
+    title: "Monitoring",
     items: [{ label: "Logs & Monitor", to: "/logs", icon: ScrollText }],
   },
   {

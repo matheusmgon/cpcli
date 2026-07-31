@@ -77,7 +77,7 @@ func TestUnknownKindIsRejected(t *testing.T) {
 	f := &fakeClient{}
 	s := connected(f)
 	_, err := s.ListObjects("dragon", "")
-	if err == nil || !strings.Contains(err.Error(), "desconhecido") {
+	if err == nil || !strings.Contains(err.Error(), "unknown") {
 		t.Fatalf("ListObjects on unknown kind = %v, want an 'unknown kind' error", err)
 	}
 	if f.lastListCommand != "" {
@@ -249,7 +249,7 @@ func TestVpnCommunityCommandsByKind(t *testing.T) {
 func TestUnknownVpnKindIsRejected(t *testing.T) {
 	f := &fakeClient{}
 	s := connected(f)
-	if _, err := s.AddVpnCommunity("triangle", map[string]interface{}{"name": "x"}); err == nil || !strings.Contains(err.Error(), "desconhecido") {
+	if _, err := s.AddVpnCommunity("triangle", map[string]interface{}{"name": "x"}); err == nil || !strings.Contains(err.Error(), "unknown") {
 		t.Fatalf("AddVpnCommunity unknown kind = %v, want an 'unknown kind' error", err)
 	}
 	if f.lastCallCommand != "" {

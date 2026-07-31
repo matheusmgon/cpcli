@@ -68,36 +68,36 @@ export function VpnPage() {
       return getService().addVpnCommunity(kind, fields);
     },
     onSuccess: () => {
-      toast.success("Comunidade criada");
+      toast.success("Community created");
       markPending(1);
       queryClient.invalidateQueries({ queryKey: ["vpn", kind] });
     },
     onError: (error: unknown) => {
-      toast.error(errorMessage(error, "Falha ao criar comunidade"));
+      toast.error(errorMessage(error, "Failed to create community"));
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (name: string) => getService().deleteVpnCommunity(kind, name),
     onSuccess: () => {
-      toast.success("Comunidade removida");
+      toast.success("Community removed");
       markPending(1);
       queryClient.invalidateQueries({ queryKey: ["vpn", kind] });
     },
     onError: (error: unknown) => {
-      toast.error(errorMessage(error, "Falha ao remover comunidade"));
+      toast.error(errorMessage(error, "Failed to remove community"));
     },
   });
 
   const fields: EntityField[] =
     kind === "star"
       ? [
-          { key: "name", label: "Nome" },
+          { key: "name", label: "Name" },
           { key: "center-gateways", label: "Center gateways", placeholder: "gw1, gw2" },
           { key: "satellite-gateways", label: "Satellite gateways", placeholder: "gw3, gw4" },
         ]
       : [
-          { key: "name", label: "Nome" },
+          { key: "name", label: "Name" },
           { key: "gateways", label: "Gateways", placeholder: "gw1, gw2" },
         ];
 
@@ -108,7 +108,7 @@ export function VpnPage() {
       <Button
         variant="ghost"
         size="icon"
-        title="Apagar"
+        title="Delete"
         onClick={() => deleteMutation.mutate(String(row.original.name))}
       >
         <Trash2 className="size-4" />
@@ -119,21 +119,21 @@ export function VpnPage() {
   const columns: ColumnDef<JsonRecord>[] =
     kind === "star"
       ? [
-          { accessorKey: "name", header: "Nome" },
+          { accessorKey: "name", header: "Name" },
           {
             id: "center-gateways",
-            header: "Centrais",
+            header: "Center",
             cell: ({ row }) => refName(row.original["center-gateways"]),
           },
           {
             id: "satellite-gateways",
-            header: "Satélites",
+            header: "Satellites",
             cell: ({ row }) => refName(row.original["satellite-gateways"]),
           },
           actionsColumn,
         ]
       : [
-          { accessorKey: "name", header: "Nome" },
+          { accessorKey: "name", header: "Name" },
           {
             id: "gateways",
             header: "Gateways",
@@ -146,20 +146,20 @@ export function VpnPage() {
     <div>
       <PageHeader
         title={`VPN ${kind === "star" ? "Star" : "Meshed"}`}
-        subtitle="Comunidades VPN site-to-site."
+        subtitle="Site-to-site VPN communities."
         actions={
           <Button onClick={() => setDialogOpen(true)}>
-            <Plus /> Criar comunidade
+            <Plus /> Create community
           </Button>
         }
       />
 
-      <DataTable columns={columns} data={data} searchPlaceholder="Buscar comunidade..." />
+      <DataTable columns={columns} data={data} searchPlaceholder="Search community..." />
 
       <EntityFormDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        title="Criar comunidade"
+        title="Create community"
         fields={fields}
         onSubmit={async (values) => {
           await addMutation.mutateAsync(values);

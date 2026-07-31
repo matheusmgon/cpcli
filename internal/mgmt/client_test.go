@@ -158,7 +158,7 @@ func TestCallTimesOut(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected a timeout error when the call never returns")
 	}
-	if !strings.Contains(err.Error(), "não respondeu") {
+	if !strings.Contains(err.Error(), "did not respond") {
 		t.Errorf("error = %q, want a timeout message", err.Error())
 	}
 }

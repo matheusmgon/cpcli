@@ -36,11 +36,11 @@ export const objectKinds: Record<string, ObjectKindConfig> = {
   host: {
     title: "Hosts",
     fields: [
-      { key: "name", label: "Nome", placeholder: "nome (ex: web-01)" },
-      { key: "ip-address", label: "IP", placeholder: "ip (ex: 10.0.0.10)" },
+      { key: "name", label: "Name", placeholder: "name (e.g. web-01)" },
+      { key: "ip-address", label: "IP", placeholder: "ip (e.g. 10.0.0.10)" },
     ],
     columns: [
-      { header: "Nome", accessor: (row) => text(row.name) },
+      { header: "Name", accessor: (row) => text(row.name) },
       {
         header: "IPv4",
         accessor: (row) => text(row["ipv4-address"] || row["ipv6-address"]),
@@ -50,12 +50,12 @@ export const objectKinds: Record<string, ObjectKindConfig> = {
   network: {
     title: "Networks",
     fields: [
-      { key: "name", label: "Nome", placeholder: "nome (ex: lan)" },
-      { key: "subnet4", label: "Subnet", placeholder: "subnet (ex: 10.0.0.0)" },
-      { key: "mask-length4", label: "Máscara", placeholder: "máscara (ex: 24)" },
+      { key: "name", label: "Name", placeholder: "name (e.g. lan)" },
+      { key: "subnet4", label: "Subnet", placeholder: "subnet (e.g. 10.0.0.0)" },
+      { key: "mask-length4", label: "Mask", placeholder: "mask (e.g. 24)" },
     ],
     columns: [
-      { header: "Nome", accessor: (row) => text(row.name) },
+      { header: "Name", accessor: (row) => text(row.name) },
       {
         header: "Subnet",
         accessor: (row) => `${text(row.subnet4)} / ${text(row["mask-length4"])}`,
@@ -64,11 +64,11 @@ export const objectKinds: Record<string, ObjectKindConfig> = {
   },
   group: {
     title: "Groups",
-    fields: [{ key: "name", label: "Nome", placeholder: "nome do grupo" }],
+    fields: [{ key: "name", label: "Name", placeholder: "group name" }],
     columns: [
-      { header: "Nome", accessor: (row) => text(row.name) },
+      { header: "Name", accessor: (row) => text(row.name) },
       {
-        header: "Membros",
+        header: "Members",
         accessor: (row) => text(Array.isArray(row.members) ? row.members.length : 0),
       },
     ],
@@ -76,34 +76,34 @@ export const objectKinds: Record<string, ObjectKindConfig> = {
   "service-tcp": {
     title: "Services TCP",
     fields: [
-      { key: "name", label: "Nome", placeholder: "nome (ex: my-tcp)" },
-      { key: "port", label: "Porta", placeholder: "porta (ex: 8080)" },
+      { key: "name", label: "Name", placeholder: "name (e.g. my-tcp)" },
+      { key: "port", label: "Port", placeholder: "port (e.g. 8080)" },
     ],
     columns: [
-      { header: "Nome", accessor: (row) => text(row.name) },
-      { header: "Porta", accessor: (row) => text(row.port) },
+      { header: "Name", accessor: (row) => text(row.name) },
+      { header: "Port", accessor: (row) => text(row.port) },
     ],
   },
   "service-udp": {
     title: "Services UDP",
     fields: [
-      { key: "name", label: "Nome", placeholder: "nome (ex: my-udp)" },
-      { key: "port", label: "Porta", placeholder: "porta (ex: 53)" },
+      { key: "name", label: "Name", placeholder: "name (e.g. my-udp)" },
+      { key: "port", label: "Port", placeholder: "port (e.g. 53)" },
     ],
     columns: [
-      { header: "Nome", accessor: (row) => text(row.name) },
-      { header: "Porta", accessor: (row) => text(row.port) },
+      { header: "Name", accessor: (row) => text(row.name) },
+      { header: "Port", accessor: (row) => text(row.port) },
     ],
   },
   "address-range": {
     title: "Address Ranges",
     fields: [
-      { key: "name", label: "Nome", placeholder: "nome (ex: dhcp-pool)" },
-      { key: "ipv4-address-first", label: "IP inicial", placeholder: "IP inicial" },
-      { key: "ipv4-address-last", label: "IP final", placeholder: "IP final" },
+      { key: "name", label: "Name", placeholder: "name (e.g. dhcp-pool)" },
+      { key: "ipv4-address-first", label: "First IP", placeholder: "First IP" },
+      { key: "ipv4-address-last", label: "Last IP", placeholder: "Last IP" },
     ],
     columns: [
-      { header: "Nome", accessor: (row) => text(row.name) },
+      { header: "Name", accessor: (row) => text(row.name) },
       {
         header: "Range",
         accessor: (row) =>
@@ -113,11 +113,11 @@ export const objectKinds: Record<string, ObjectKindConfig> = {
   },
   "service-group": {
     title: "Service Groups",
-    fields: [{ key: "name", label: "Nome", placeholder: "nome do grupo de serviços" }],
+    fields: [{ key: "name", label: "Name", placeholder: "service group name" }],
     columns: [
-      { header: "Nome", accessor: (row) => text(row.name) },
+      { header: "Name", accessor: (row) => text(row.name) },
       {
-        header: "Membros",
+        header: "Members",
         accessor: (row) => text(Array.isArray(row.members) ? row.members.length : 0),
       },
     ],
@@ -125,12 +125,12 @@ export const objectKinds: Record<string, ObjectKindConfig> = {
   "access-role": {
     title: "Access Roles",
     fields: [
-      { key: "name", label: "Nome", placeholder: "nome do access-role" },
-      { key: "comments", label: "Comentário", placeholder: "comentário (opcional)" },
+      { key: "name", label: "Name", placeholder: "access-role name" },
+      { key: "comments", label: "Comment", placeholder: "comment (optional)" },
     ],
     columns: [
-      { header: "Nome", accessor: (row) => text(row.name) },
-      { header: "Comentário", accessor: (row) => text(row.comments) },
+      { header: "Name", accessor: (row) => text(row.name) },
+      { header: "Comment", accessor: (row) => text(row.comments) },
     ],
   },
 };

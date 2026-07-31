@@ -82,10 +82,10 @@ export function EntityFormDialog({
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
+              Cancel
             </Button>
             <Button type="submit" disabled={submitting}>
-              Salvar
+              Save
             </Button>
           </DialogFooter>
         </form>

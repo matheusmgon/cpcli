@@ -14,7 +14,7 @@ import (
 	"cpcli/internal/config"
 )
 
-var ErrNotLoggedIn = errors.New("não autenticado — rode `cpcli login` primeiro (use --profile se estiver gerenciando mais de um servidor)")
+var ErrNotLoggedIn = errors.New("not authenticated — run `cpcli login` first (use --profile if managing more than one server)")
 
 // Session is the persisted state of a logged-in profile.
 type Session struct {
@@ -41,7 +41,7 @@ type Session struct {
 // arbitrary file via a value like "../../etc/passwd".
 func filePath(profile string) (string, error) {
 	if profile == "" || profile != filepath.Base(profile) {
-		return "", fmt.Errorf("nome de perfil inválido: %q", profile)
+		return "", fmt.Errorf("invalid profile name: %q", profile)
 	}
 	dir, err := config.Dir()
 	if err != nil {

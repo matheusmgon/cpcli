@@ -15,7 +15,7 @@ interface RulebaseTableProps {
    * rows (rows whose `type` ends in "-section", e.g. "nat-section"). */
   rows: JsonRecord[];
   columns: RulebaseColumn[];
-  /** Per-rule actions cell (Editar/Apagar) — sections never get one. */
+  /** Per-rule actions cell (Edit/Delete) — sections never get one. */
   renderActions?: (row: JsonRecord) => ReactNode;
   emptyMessage?: string;
 }
@@ -34,7 +34,7 @@ function isSectionRow(row: JsonRecord): boolean {
  * nested array. Sections start collapsed and toggle open on click; rule
  * count is shown so an empty section (nothing configured yet, common for a
  * fresh policy) doesn't look broken. */
-export function RulebaseTable({ rows, columns, renderActions, emptyMessage = "Sem regras." }: RulebaseTableProps) {
+export function RulebaseTable({ rows, columns, renderActions, emptyMessage = "No rules." }: RulebaseTableProps) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   function toggle(uid: string) {
@@ -59,7 +59,7 @@ export function RulebaseTable({ rows, columns, renderActions, emptyMessage = "Se
           {columns.map((col) => (
             <TableHead key={col.header}>{col.header}</TableHead>
           ))}
-          {renderActions && <TableHead className="text-right">Ações</TableHead>}
+          {renderActions && <TableHead className="text-right">Actions</TableHead>}
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -78,9 +78,9 @@ export function RulebaseTable({ rows, columns, renderActions, emptyMessage = "Se
                   <TableCell colSpan={colSpan} className="font-medium text-muted">
                     <span className="flex items-center gap-1.5">
                       {isOpen ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
-                      {typeof row.name === "string" && row.name ? row.name : "Seção"}
+                      {typeof row.name === "string" && row.name ? row.name : "Section"}
                       <span className="font-normal text-muted/70">
-                        ({nested.length} {nested.length === 1 ? "regra" : "regras"})
+                        ({nested.length} {nested.length === 1 ? "rule" : "rules"})
                       </span>
                     </span>
                   </TableCell>
@@ -89,7 +89,7 @@ export function RulebaseTable({ rows, columns, renderActions, emptyMessage = "Se
                   (nested.length === 0 ? (
                     <TableRow key={`${uid}-empty`}>
                       <TableCell colSpan={colSpan} className="text-sm text-muted">
-                        Nenhuma regra nesta seção.
+                        No rules in this section.
                       </TableCell>
                     </TableRow>
                   ) : (

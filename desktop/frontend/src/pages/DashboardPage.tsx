@@ -78,12 +78,12 @@ export function DashboardPage() {
 
   useEffect(() => {
     const failures: Array<[boolean, string]> = [
-      [hostsQuery.isError, "Falha ao carregar hosts."],
-      [networksQuery.isError, "Falha ao carregar networks."],
-      [layersQuery.isError, "Falha ao carregar access layers."],
-      [rulesQuery.isError, "Falha ao carregar regras de acesso."],
-      [gatewaysQuery.isError, "Falha ao carregar gateways."],
-      [packagesQuery.isError, "Falha ao carregar pacotes de política."],
+      [hostsQuery.isError, "Failed to load hosts."],
+      [networksQuery.isError, "Failed to load networks."],
+      [layersQuery.isError, "Failed to load access layers."],
+      [rulesQuery.isError, "Failed to load access rules."],
+      [gatewaysQuery.isError, "Failed to load gateways."],
+      [packagesQuery.isError, "Failed to load policy packages."],
     ];
     for (const [isError, message] of failures) {
       if (isError) toast.error(message);
@@ -111,7 +111,7 @@ export function DashboardPage() {
 
   return (
     <div>
-      <PageHeader title="Dashboard" subtitle="Visão geral do ambiente" />
+      <PageHeader title="Dashboard" subtitle="Environment overview" />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard
@@ -130,7 +130,7 @@ export function DashboardPage() {
         />
         <StatCard
           icon={ShieldCheck}
-          label="Regras de acesso"
+          label="Access rules"
           value={rulesValue}
           isLoading={rulesLoading}
           isError={rulesError}
@@ -144,7 +144,7 @@ export function DashboardPage() {
         />
         <StatCard
           icon={FolderKanban}
-          label="Pacotes de política"
+          label="Policy packages"
           value={packageNames.length}
           isLoading={packagesQuery.isLoading}
           isError={packagesQuery.isError}

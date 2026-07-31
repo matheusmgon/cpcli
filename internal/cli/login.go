@@ -25,13 +25,13 @@ func newLoginCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "login",
-		Short: "Autentica no Management Server e guarda a sessão localmente",
+		Short: "Log in to the Management Server and store the session locally",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if server == "" {
-				return fmt.Errorf("--server é obrigatório")
+				return fmt.Errorf("--server is required")
 			}
 			if apiKey == "" && user == "" {
-				return fmt.Errorf("informe --user (login com usuário/senha) ou --api-key")
+				return fmt.Errorf("provide --user (username/password login) or --api-key")
 			}
 
 			password := ""
@@ -41,7 +41,7 @@ func newLoginCmd() *cobra.Command {
 					var perr error
 					password, perr = promptPassword()
 					if perr != nil {
-						return fmt.Errorf("falha ao ler senha: %w", perr)
+						return fmt.Errorf("failed to read password: %w", perr)
 					}
 				}
 			}
@@ -74,28 +74,28 @@ func newLoginCmd() *cobra.Command {
 			if err := session.Save(activeProfile(), sess); err != nil {
 				return err
 			}
-			fmt.Printf("Login efetuado em %s (perfil %q). Sessão salva.\n", server, activeProfile())
+			fmt.Printf("Logged in to %s (profile %q). Session saved.\n", server, activeProfile())
 			return nil
 		},
 	}
 
-	cmd.Flags().StringVar(&server, "server", "", "Endereço IP ou hostname do Management Server (obrigatório)")
-	cmd.Flags().IntVar(&port, "port", mgmt.DefaultPort, "Porta da API")
-	cmd.Flags().StringVar(&user, "user", "", "Usuário administrador (senha via CPCLI_PASSWORD ou prompt interativo)")
-	cmd.Flags().StringVar(&apiKey, "api-key", "", "Autentica via API key ao invés de usuário/senha")
-	cmd.Flags().StringVar(&domain, "domain", "", "Nome/UID/IP do domínio (Multi-Domain Server)")
-	cmd.Flags().BoolVar(&readOnly, "read-only", false, "Login em modo somente leitura")
-	cmd.Flags().BoolVar(&continueSession, "continue-last-session", false, "Continua a última sessão ao invés de criar uma nova")
-	cmd.Flags().BoolVar(&insecure, "insecure", false, "NÃO verifica o fingerprint TLS do servidor (inseguro — use só em laboratório)")
+	cmd.Flags().StringVar(&server, "server", "", "IP address or hostname of the Management Server (required)")
+	cmd.Flags().IntVar(&port, "port", mgmt.DefaultPort, "API port")
+	cmd.Flags().StringVar(&user, "user", "", "Administrator user (password via CPCLI_PASSWORD env or interactive prompt)")
+	cmd.Flags().StringVar(&apiKey, "api-key", "", "Authenticate via API key instead of username/password")
+	cmd.Flags().StringVar(&domain, "domain", "", "Domain name/UID/IP (Multi-Domain Server)")
+	cmd.Flags().BoolVar(&readOnly, "read-only", false, "Log in in read-only mode")
+	cmd.Flags().BoolVar(&continueSession, "continue-last-session", false, "Continue the last session instead of creating a new one")
+	cmd.Flags().BoolVar(&insecure, "insecure", false, "do NOT verify the server's TLS fingerprint (insecure — lab use only)")
 	return cmd
 }
 
 func promptPassword() (string, error) {
 	fd := int(os.Stdin.Fd())
 	if !term.IsTerminal(fd) {
-		return "", fmt.Errorf("stdin não é um terminal interativo (comum ao rodar via wrapper/CI/pipe) — defina a senha com a variável de ambiente CPCLI_PASSWORD em vez de deixar o prompt pedir")
+		return "", fmt.Errorf("stdin is not an interactive terminal (common when running via wrapper/CI/pipe) — set the password with the CPCLI_PASSWORD environment variable instead of relying on the prompt")
 	}
-	fmt.Fprint(os.Stderr, "Senha: ")
+	fmt.Fprint(os.Stderr, "Password: ")
 	b, err := term.ReadPassword(fd)
 	fmt.Fprintln(os.Stderr)
 	if err != nil {

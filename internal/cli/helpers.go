@@ -62,7 +62,7 @@ func callAndPrint(command string, payload map[string]interface{}, waitForTask bo
 		return err
 	}
 	if mutates {
-		fmt.Fprintln(os.Stderr, "Lembre-se de rodar `cpcli session publish` para efetivar a mudança nos gateways.")
+		fmt.Fprintln(os.Stderr, "Remember to run `cpcli session publish` to apply the change to the gateways.")
 	}
 	return nil
 }
@@ -125,7 +125,7 @@ func parseFields(fields []string) (map[string]interface{}, error) {
 	for _, f := range fields {
 		key, value, ok := splitKV(f)
 		if !ok {
-			return nil, fmt.Errorf("--field inválido (esperado chave=valor): %q", f)
+			return nil, fmt.Errorf("invalid --field (expected key=value): %q", f)
 		}
 		var decoded interface{}
 		if err := json.Unmarshal([]byte(value), &decoded); err == nil {
@@ -150,7 +150,7 @@ func splitKV(s string) (key, value string, ok bool) {
 // that accept either a "name" or a "uid".
 func nameOrUIDPayload(name, uid string) (map[string]interface{}, error) {
 	if uid == "" && name == "" {
-		return nil, errors.New("informe --name ou --uid")
+		return nil, errors.New("provide --name or --uid")
 	}
 	p := map[string]interface{}{}
 	if uid != "" {

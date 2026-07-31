@@ -9,12 +9,12 @@ import (
 func newSearchCmd() *cobra.Command {
 	root := &cobra.Command{
 		Use:   "find",
-		Short: "Busca objetos de qualquer tipo (show-objects) e referências (where-used)",
+		Short: "Search objects of any type (show-objects) and references (where-used)",
 		RunE:  runFindObjects,
 	}
-	root.Flags().String("filter", "", "Texto de busca (filtro do Check Point)")
-	root.Flags().String("type", "", "Restringe a um tipo de objeto (ex: host, network, service-tcp)")
-	root.Flags().String("details-level", "standard", "Nível de detalhe: uid | standard | full")
+	root.Flags().String("filter", "", "Search text (Check Point filter)")
+	root.Flags().String("type", "", "Restrict to an object type (e.g. host, network, service-tcp)")
+	root.Flags().String("details-level", "standard", "Detail level: uid | standard | full")
 
 	root.AddCommand(newWhereUsedCmd())
 	return root
@@ -40,7 +40,7 @@ func newWhereUsedCmd() *cobra.Command {
 	var indirect bool
 	cmd := &cobra.Command{
 		Use:   "where-used",
-		Short: "Mostra onde um objeto é referenciado (regras, grupos, etc.)",
+		Short: "Show where an object is referenced (rules, groups, etc.)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			payload, err := nameOrUIDPayload(name, uid)
 			if err != nil {
@@ -52,8 +52,8 @@ func newWhereUsedCmd() *cobra.Command {
 			return callAndPrint("where-used", payload, false, false)
 		},
 	}
-	cmd.Flags().StringVar(&name, "name", "", "Nome do objeto")
-	cmd.Flags().StringVar(&uid, "uid", "", "UID do objeto")
-	cmd.Flags().BoolVar(&indirect, "indirect", false, "Inclui referências indiretas (via grupos)")
+	cmd.Flags().StringVar(&name, "name", "", "Object name")
+	cmd.Flags().StringVar(&uid, "uid", "", "Object UID")
+	cmd.Flags().BoolVar(&indirect, "indirect", false, "Include indirect references (via groups)")
 	return cmd
 }

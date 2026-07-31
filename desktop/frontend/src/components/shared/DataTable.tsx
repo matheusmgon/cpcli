@@ -31,8 +31,8 @@ interface DataTableProps<TData, TValue> {
 export function DataTable<TData, TValue>({
   columns,
   data,
-  searchPlaceholder = "Buscar...",
-  emptyTitle = "Nenhum item encontrado",
+  searchPlaceholder = "Search...",
+  emptyTitle = "No items found",
   emptyDescription,
 }: DataTableProps<TData, TValue>) {
   const [globalFilter, setGlobalFilter] = useState("");

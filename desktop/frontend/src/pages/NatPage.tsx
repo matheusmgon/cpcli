@@ -134,43 +134,43 @@ export function NatPage() {
   const addMutation = useMutation({
     mutationFn: (fields: JsonRecord) => getService().addNatRule(pkgName, fields),
     onSuccess: () => {
-      toast.success("Regra NAT criada");
+      toast.success("NAT rule created");
       invalidateRulebase();
       useSessionStore.getState().markPending(1);
     },
-    onError: (error) => toast.error(`Falha ao criar regra NAT: ${getErrorMessage(error)}`),
+    onError: (error) => toast.error(`Failed to create NAT rule: ${getErrorMessage(error)}`),
   });
 
   const editMutation = useMutation({
     mutationFn: ({ uid, fields }: { uid: string; fields: JsonRecord }) =>
       getService().setNatRule(pkgName, uid, fields),
     onSuccess: () => {
-      toast.success("Regra NAT atualizada");
+      toast.success("NAT rule updated");
       invalidateRulebase();
       useSessionStore.getState().markPending(1);
     },
-    onError: (error) => toast.error(`Falha ao atualizar regra NAT: ${getErrorMessage(error)}`),
+    onError: (error) => toast.error(`Failed to update NAT rule: ${getErrorMessage(error)}`),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (uid: string) => getService().deleteNatRule(pkgName, uid),
     onSuccess: () => {
-      toast.success("Regra NAT removida");
+      toast.success("NAT rule removed");
       invalidateRulebase();
       useSessionStore.getState().markPending(1);
     },
-    onError: (error) => toast.error(`Falha ao remover regra NAT: ${getErrorMessage(error)}`),
+    onError: (error) => toast.error(`Failed to remove NAT rule: ${getErrorMessage(error)}`),
   });
 
   const toggleEnabledMutation = useMutation({
     mutationFn: ({ uid, enabled }: { uid: string; enabled: boolean }) =>
       getService().setNatRule(pkgName, uid, { enabled }),
     onSuccess: (_data, { enabled }) => {
-      toast.success(enabled ? "Regra NAT ativada" : "Regra NAT desativada");
+      toast.success(enabled ? "NAT rule enabled" : "NAT rule disabled");
       invalidateRulebase();
       useSessionStore.getState().markPending(1);
     },
-    onError: (error) => toast.error(`Falha ao alterar regra NAT: ${getErrorMessage(error)}`),
+    onError: (error) => toast.error(`Failed to change NAT rule: ${getErrorMessage(error)}`),
   });
 
   function openCreateDialog() {
@@ -197,7 +197,7 @@ export function NatPage() {
   }
 
   function handleDelete(uid: string) {
-    if (!window.confirm("Remover esta regra NAT?")) return;
+    if (!window.confirm("Remove this NAT rule?")) return;
     deleteMutation.mutate(uid);
   }
 
@@ -232,11 +232,11 @@ export function NatPage() {
     <div>
       <PageHeader
         title="NAT"
-        subtitle="Regras de NAT de um pacote de política."
+        subtitle="NAT rules for a policy package."
         actions={
           <Button onClick={openCreateDialog} disabled={!pkgName}>
             <Plus className="size-4" />
-            Nova regra NAT
+            New NAT rule
           </Button>
         }
       />
@@ -247,7 +247,7 @@ export function NatPage() {
         </Label>
         <Select value={pkgName} onValueChange={setPkgName}>
           <SelectTrigger id="package-select">
-            <SelectValue placeholder="Selecione um package" />
+            <SelectValue placeholder="Select a package" />
           </SelectTrigger>
           <SelectContent>
             {packages.map((pkg) => {
@@ -264,11 +264,11 @@ export function NatPage() {
 
       <RulebaseTable
         rows={rows}
-        emptyMessage={pkgName ? "Este pacote ainda não tem regras de NAT." : "Selecione um pacote para ver as regras."}
+        emptyMessage={pkgName ? "This package has no NAT rules yet." : "Select a package to see its rules."}
         columns={[
           { header: "#", cell: (row) => (typeof row["rule-number"] === "number" ? String(row["rule-number"]) : "") },
           {
-            header: "Ativa",
+            header: "Enabled",
             cell: (row) => {
               const uid = String(row.uid ?? "");
               const enabled = row.enabled !== false;
@@ -279,26 +279,26 @@ export function NatPage() {
                   disabled={!uid || toggleEnabledMutation.isPending}
                   onChange={() => toggleEnabledMutation.mutate({ uid, enabled: !enabled })}
                   className="size-4 rounded border-border accent-accent"
-                  aria-label={enabled ? "Desativar regra NAT" : "Ativar regra NAT"}
+                  aria-label={enabled ? "Disable NAT rule" : "Enable NAT rule"}
                 />
               );
             },
           },
-          { header: "Orig. origem", cell: (row) => refName(row["original-source"]) },
-          { header: "Orig. destino", cell: (row) => refName(row["original-destination"]) },
-          { header: "Orig. serviço", cell: (row) => refName(row["original-service"]) },
-          { header: "Método", cell: (row) => refName(row.method) },
+          { header: "Orig. source", cell: (row) => refName(row["original-source"]) },
+          { header: "Orig. destination", cell: (row) => refName(row["original-destination"]) },
+          { header: "Orig. service", cell: (row) => refName(row["original-service"]) },
+          { header: "Method", cell: (row) => refName(row.method) },
         ]}
         renderActions={(row) => (
           <div className="flex justify-end gap-1">
-            <Button variant="ghost" size="icon" onClick={() => openEditDialog(row)} aria-label="Editar regra NAT">
+            <Button variant="ghost" size="icon" onClick={() => openEditDialog(row)} aria-label="Edit NAT rule">
               <Pencil className="size-4" />
             </Button>
             <Button
               variant="ghost"
               size="icon"
               onClick={() => handleDelete(String(row.uid ?? ""))}
-              aria-label="Remover regra NAT"
+              aria-label="Remove NAT rule"
             >
               <Trash2 className="size-4" />
             </Button>
@@ -309,17 +309,17 @@ export function NatPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen} modal={false}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingUid ? "Editar regra NAT" : "Nova regra NAT"}</DialogTitle>
+            <DialogTitle>{editingUid ? "Edit NAT rule" : "New NAT rule"}</DialogTitle>
             <DialogDescription>
               {editingUid
-                ? "Campos de objetos vazios não são alterados."
-                : "Campos vazios ficam de fora — só envie o que quer definir."}
+                ? "Empty object fields are not changed."
+                : "Empty fields are omitted — only send what you want to set."}
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex max-h-[60vh] flex-col gap-4 overflow-y-auto pr-1">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="nat-method">Método</Label>
+              <Label htmlFor="nat-method">Method</Label>
               <Select
                 value={form.method}
                 onValueChange={(value) => setForm((prev) => ({ ...prev, method: value as MethodOption }))}
@@ -346,11 +346,11 @@ export function NatPage() {
                   onChange={(e) => setForm((prev) => ({ ...prev, enabled: e.target.checked }))}
                   className="size-4 rounded border-border accent-accent"
                 />
-                <Label htmlFor="nat-enabled">Habilitada</Label>
+                <Label htmlFor="nat-enabled">Enabled</Label>
               </div>
             ) : (
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="nat-position">Posição</Label>
+                <Label htmlFor="nat-position">Position</Label>
                 <Select
                   value={form.position}
                   onValueChange={(value) => setForm((prev) => ({ ...prev, position: value as "top" | "bottom" }))}
@@ -367,61 +367,61 @@ export function NatPage() {
             )}
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="nat-original-source">Origem original</Label>
+              <Label htmlFor="nat-original-source">Original source</Label>
               <ObjectPicker
                 value={form.originalSource}
                 onChange={(names) => setForm((prev) => ({ ...prev, originalSource: names }))}
-                placeholder="Buscar objetos... (vazio = Any)"
+                placeholder="Search objects... (empty = Any)"
                 categories={["network"]}
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="nat-original-destination">Destino original</Label>
+              <Label htmlFor="nat-original-destination">Original destination</Label>
               <ObjectPicker
                 value={form.originalDestination}
                 onChange={(names) => setForm((prev) => ({ ...prev, originalDestination: names }))}
-                placeholder="Buscar objetos... (vazio = Any)"
+                placeholder="Search objects... (empty = Any)"
                 categories={["network"]}
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="nat-original-service">Serviço original</Label>
+              <Label htmlFor="nat-original-service">Original service</Label>
               <ObjectPicker
                 value={form.originalService}
                 onChange={(names) => setForm((prev) => ({ ...prev, originalService: names }))}
-                placeholder="Buscar objetos... (vazio = Any)"
+                placeholder="Search objects... (empty = Any)"
                 categories={["service"]}
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="nat-translated-source">Origem traduzida</Label>
+              <Label htmlFor="nat-translated-source">Translated source</Label>
               <ObjectPicker
                 value={form.translatedSource}
                 onChange={(names) => setForm((prev) => ({ ...prev, translatedSource: names }))}
-                placeholder="Buscar objetos... (opcional)"
+                placeholder="Search objects... (optional)"
                 categories={["network"]}
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="nat-translated-destination">Destino traduzido</Label>
+              <Label htmlFor="nat-translated-destination">Translated destination</Label>
               <ObjectPicker
                 value={form.translatedDestination}
                 onChange={(names) => setForm((prev) => ({ ...prev, translatedDestination: names }))}
-                placeholder="Buscar objetos... (opcional)"
+                placeholder="Search objects... (optional)"
                 categories={["network"]}
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="nat-translated-service">Serviço traduzido</Label>
+              <Label htmlFor="nat-translated-service">Translated service</Label>
               <ObjectPicker
                 value={form.translatedService}
                 onChange={(names) => setForm((prev) => ({ ...prev, translatedService: names }))}
-                placeholder="Buscar objetos... (opcional)"
+                placeholder="Search objects... (optional)"
                 categories={["service"]}
               />
             </div>
@@ -429,10 +429,10 @@ export function NatPage() {
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-              Cancelar
+              Cancel
             </Button>
             <Button type="button" onClick={handleSubmit} disabled={isSaving}>
-              Salvar
+              Save
             </Button>
           </DialogFooter>
         </DialogContent>

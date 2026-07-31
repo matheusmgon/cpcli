@@ -13,7 +13,7 @@ import (
 func newLogoutCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "logout",
-		Short: "Encerra a sessão no servidor e apaga a sessão local",
+		Short: "End the server session and remove the local session",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, _, err := clientFromSession()
 			if err != nil {
@@ -27,7 +27,7 @@ func newLogoutCmd() *cobra.Command {
 			// warn instead of silently pretending the server-side session
 			// was actually closed.
 			if err := client.Logout(); err != nil {
-				fmt.Fprintf(os.Stderr, "aviso: falha ao encerrar a sessão no servidor: %v\n", err)
+				fmt.Fprintf(os.Stderr, "warning: failed to end the server session: %v\n", err)
 			}
 			return session.Clear(activeProfile())
 		},

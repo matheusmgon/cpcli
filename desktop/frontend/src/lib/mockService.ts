@@ -11,8 +11,8 @@ let pending = 0;
 const delay = <T,>(v: T) => new Promise<T>((resolve) => setTimeout(() => resolve(v), 220));
 
 const hosts: JsonRecord[] = [
-  { name: "web-01", "ipv4-address": "10.10.1.11", comments: "Servidor web" },
-  { name: "db-01", "ipv4-address": "10.10.1.20", comments: "Banco de dados" },
+  { name: "web-01", "ipv4-address": "10.10.1.11", comments: "Web server" },
+  { name: "db-01", "ipv4-address": "10.10.1.20", comments: "Database" },
   { name: "mgmt-server", "ipv4-address": "192.168.56.10", comments: "" },
 ];
 const networks: JsonRecord[] = [
@@ -27,7 +27,7 @@ const objectStore: Record<string, JsonRecord[]> = {
   "service-udp": [{ name: "svc-dns", port: "53" }],
   "address-range": [{ name: "dhcp-pool", "ipv4-address-first": "10.10.5.10", "ipv4-address-last": "10.10.5.100" }],
   "service-group": [{ name: "grp-web-svc", members: ["svc-https"] }],
-  "access-role": [{ name: "role-admins", comments: "Administradores" }],
+  "access-role": [{ name: "role-admins", comments: "Administrators" }],
 };
 
 const layer = { name: "Network", uid: "layer-mock-1", type: "access-layer" };
@@ -35,7 +35,7 @@ const rulebase: JsonRecord[] = [
   {
     "rule-number": 1,
     uid: "rule-mock-1",
-    name: "Permitir LAN → Internet",
+    name: "Allow LAN → Internet",
     action: { name: "Accept" },
     source: [{ name: "lan-servers" }],
     destination: [{ name: "Any" }],
@@ -44,7 +44,7 @@ const rulebase: JsonRecord[] = [
   {
     "rule-number": 2,
     uid: "rule-mock-2",
-    name: "Bloquear DMZ → LAN",
+    name: "Block DMZ → LAN",
     action: { name: "Drop" },
     source: [{ name: "dmz" }],
     destination: [{ name: "lan-servers" }],
@@ -104,7 +104,7 @@ const threatRulebase: JsonRecord[] = [
   {
     "rule-number": 1,
     uid: "threat-rule-mock-1",
-    name: "Perfil padrão",
+    name: "Default profile",
     action: { name: "Optimized" },
     "protected-scope": [{ name: "Any" }],
   },
@@ -116,7 +116,7 @@ const httpsRulebase: JsonRecord[] = [
   {
     "rule-number": 1,
     uid: "https-rule-mock-1",
-    name: "Inspecionar tudo",
+    name: "Inspect all",
     action: "Inspect",
     source: [{ name: "Any" }],
     destination: [{ name: "Any" }],
@@ -155,7 +155,7 @@ const gatewayBlades: Record<string, JsonRecord> = {
 };
 
 function requireSession() {
-  if (!session.connected) throw new Error("não conectado — faça login primeiro");
+  if (!session.connected) throw new Error("not connected — please log in first");
 }
 
 export const mockService: CpService = {

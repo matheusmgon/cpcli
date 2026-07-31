@@ -25,9 +25,9 @@ export function Topbar() {
     try {
       await getService().publish();
       resetPending();
-      toast.success("Mudanças publicadas com sucesso");
+      toast.success("Changes published successfully");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao publicar");
+      toast.error(err instanceof Error ? err.message : "Failed to publish");
     } finally {
       setBusy(null);
     }
@@ -38,9 +38,9 @@ export function Topbar() {
     try {
       await getService().discard();
       resetPending();
-      toast.success("Mudanças descartadas");
+      toast.success("Changes discarded");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao descartar");
+      toast.error(err instanceof Error ? err.message : "Failed to discard");
     } finally {
       setBusy(null);
     }
@@ -60,18 +60,18 @@ export function Topbar() {
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-surface px-5">
       <div className="flex items-center gap-2 rounded-full border border-border bg-surface-2 px-3 py-1 text-sm">
         <span className="size-2 rounded-full bg-ok" />
-        <span className="font-medium text-text">{session.server || "desconectado"}</span>
+        <span className="font-medium text-text">{session.server || "disconnected"}</span>
         {session.user && <span className="text-muted">· {session.user}</span>}
       </div>
 
       <div className="flex items-center gap-2">
         {pending > 0 && (
           <Badge variant="warning">
-            {pending} mudança{pending === 1 ? "" : "s"} pendente{pending === 1 ? "" : "s"}
+            {pending} pending change{pending === 1 ? "" : "s"}
           </Badge>
         )}
 
-        <Button variant="ghost" size="icon" onClick={toggleTheme} title="Alternar tema">
+        <Button variant="ghost" size="icon" onClick={toggleTheme} title="Toggle theme">
           {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
         </Button>
 
@@ -90,7 +90,7 @@ export function Topbar() {
           Publish
         </Button>
 
-        <Button variant="ghost" size="icon" onClick={handleLogout} title="Sair">
+        <Button variant="ghost" size="icon" onClick={handleLogout} title="Log out">
           <LogOut className="size-4" />
         </Button>
       </div>

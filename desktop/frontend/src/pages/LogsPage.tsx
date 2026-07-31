@@ -78,7 +78,7 @@ function parseRawPairs(raw: string): { key: string; value: string }[] {
 /** Firewall log viewer — reads the last N lines of `fw log` from a chosen
  * gateway via the Management API's run-script mechanism (bypasses the
  * `show-logs` command, which needs a Smart-1 log server this Standalone
- * lab doesn't have). Explicit "Ler logs" button — we don't auto-poll,
+ * lab doesn't have). Explicit "Read logs" button — we don't auto-poll,
  * since run-script + fw log on a busy appliance can take a few seconds. */
 export function LogsPage() {
   const [gateway, setGateway] = useState("");
@@ -106,16 +106,16 @@ export function LogsPage() {
     mutationFn: () => getService().readFirewallLogs(gateway, filter, limit),
     onSuccess: (data) => {
       setLogs(data);
-      toast.success(`${data.length} entradas carregadas`);
+      toast.success(`${data.length} entries loaded`);
     },
-    onError: (error) => toast.error(`Falha ao ler logs: ${getErrorMessage(error)}`),
+    onError: (error) => toast.error(`Failed to read logs: ${getErrorMessage(error)}`),
   });
 
   return (
     <div>
       <PageHeader
         title="Logs & Monitor"
-        subtitle="Lê fw log direto do gateway via SIC (run-script). O show-logs padrão precisa de Smart-1 log server, que este lab standalone não tem."
+        subtitle="Reads fw log directly from the gateway via SIC (run-script). The standard show-logs needs a Smart-1 log server, which this standalone lab does not have."
       />
 
       <div className="mb-4 flex flex-wrap items-end gap-3">
@@ -123,7 +123,7 @@ export function LogsPage() {
           <Label htmlFor="log-gateway">Gateway</Label>
           <Select value={gateway} onValueChange={setGateway}>
             <SelectTrigger id="log-gateway">
-              <SelectValue placeholder="Selecione" />
+              <SelectValue placeholder="Select" />
             </SelectTrigger>
             <SelectContent>
               {gateways.map((g) => {
@@ -139,12 +139,12 @@ export function LogsPage() {
         </div>
 
         <div className="flex min-w-[260px] flex-1 flex-col gap-1.5">
-          <Label htmlFor="log-filter">Filtro (grep sobre a linha bruta)</Label>
+          <Label htmlFor="log-filter">Filter (grep over the raw line)</Label>
           <Input
             id="log-filter"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            placeholder='ex.: "10.0.10.10" ou "drop"'
+            placeholder='e.g. "10.0.10.10" or "drop"'
             onKeyDown={(e) => {
               if (e.key === "Enter" && gateway) readMutation.mutate();
             }}
@@ -152,7 +152,7 @@ export function LogsPage() {
         </div>
 
         <div className="flex w-24 flex-col gap-1.5">
-          <Label htmlFor="log-limit">Limite</Label>
+          <Label htmlFor="log-limit">Limit</Label>
           <Input
             id="log-limit"
             type="number"
@@ -167,12 +167,12 @@ export function LogsPage() {
           {readMutation.isPending ? (
             <>
               <RefreshCw className="size-4 animate-spin" />
-              Lendo...
+              Reading...
             </>
           ) : (
             <>
               <Search className="size-4" />
-              Ler logs
+              Read logs
             </>
           )}
         </Button>
@@ -180,8 +180,8 @@ export function LogsPage() {
 
       {logs.length === 0 ? (
         <EmptyState
-          title={readMutation.isPending ? "Carregando..." : "Nenhum log carregado ainda"}
-          description="Clique em 'Ler logs' para trazer as últimas N linhas de fw log do gateway. Filtre por IP, regra, ação, etc."
+          title={readMutation.isPending ? "Loading..." : "No logs loaded yet"}
+          description="Click 'Read logs' to fetch the last N lines of fw log from the gateway. Filter by IP, rule, action, etc."
         />
       ) : (
         <>
@@ -190,15 +190,15 @@ export function LogsPage() {
             <TableHeader>
               <TableRow className="bg-surface-2">
                 <TableHead className="w-8"></TableHead>
-                <TableHead className="w-24">Hora</TableHead>
-                <TableHead className="w-28">Ação</TableHead>
-                <TableHead className="min-w-[140px]">Origem</TableHead>
-                <TableHead className="min-w-[140px]">Destino</TableHead>
-                <TableHead className="min-w-[120px]">Serviço</TableHead>
+                <TableHead className="w-24">Time</TableHead>
+                <TableHead className="w-28">Action</TableHead>
+                <TableHead className="min-w-[140px]">Source</TableHead>
+                <TableHead className="min-w-[140px]">Destination</TableHead>
+                <TableHead className="min-w-[120px]">Service</TableHead>
                 <TableHead className="w-20">Proto</TableHead>
                 <TableHead className="w-24">Interface</TableHead>
-                <TableHead className="min-w-[160px]">Regra</TableHead>
-                <TableHead className="min-w-[220px]">NAT (traduzido)</TableHead>
+                <TableHead className="min-w-[160px]">Rule</TableHead>
+                <TableHead className="min-w-[220px]">NAT (translated)</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -222,8 +222,8 @@ export function LogsPage() {
                       {counter ? (
                         <TableCell colSpan={5} className="text-sm italic text-muted">
                           <Badge variant="outline" className="mr-2 px-2 py-0.5 text-xs uppercase">counter</Badge>
-                          Registro estatístico ({String(r.policy ?? "policy")} — hits={String(r.hit ?? "?")}). Sem src/dst
-                          porque não é um evento de pacote.
+                          Statistical record ({String(r.policy ?? "policy")} — hits={String(r.hit ?? "?")}). No src/dst
+                          because this is not a packet event.
                         </TableCell>
                       ) : (
                         <>
@@ -242,13 +242,13 @@ export function LogsPage() {
                         <TableCell colSpan={10} className="p-4">
                           <div className="rounded-md border border-border bg-surface p-4">
                             <div className="mb-2 flex items-center justify-between">
-                              <span className="text-xs font-semibold uppercase text-muted">Detalhes do log</span>
+                              <span className="text-xs font-semibold uppercase text-muted">Log details</span>
                               <button
                                 type="button"
                                 className="text-xs text-accent hover:underline"
                                 onClick={() => setExpandedIdx(null)}
                               >
-                                fechar
+                                close
                               </button>
                             </div>
                             <dl className="grid grid-cols-1 gap-x-6 gap-y-1 md:grid-cols-2">
@@ -271,9 +271,9 @@ export function LogsPage() {
         </div>
 
         <p className="mt-2 text-xs text-muted">
-          Clique em uma linha para ver o detalhamento completo abaixo (todos os pares chave:valor do fw log).
-          Linhas marcadas <span className="rounded bg-surface-2 px-1">counter</span> são registros estatísticos
-          periódicos de regras, não eventos de tráfego.
+          Click a row to see the full breakdown below (all key:value pairs from fw log).
+          Rows marked <span className="rounded bg-surface-2 px-1">counter</span> are periodic
+          statistical records for rules, not traffic events.
         </p>
         </>
       )}

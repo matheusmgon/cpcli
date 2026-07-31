@@ -168,7 +168,7 @@ func formatFailure(sdkErrMsg string, data map[string]interface{}) string {
 		if msg != "" {
 			return msg
 		}
-		return "operação falhou (o servidor não retornou detalhes)"
+		return "operation failed (the server returned no details)"
 	}
 	joined := strings.Join(extras, "\n")
 	if msg == "" || msg == "Failed to execute API call" {
@@ -360,7 +360,7 @@ func (c *Client) callWithTimeout(command string, payload map[string]interface{},
 	case o := <-done:
 		return o.res, o.err
 	case <-time.After(c.callTimeout):
-		return api.APIResponse{}, fmt.Errorf("o comando %q não respondeu em %s — o servidor pode estar com problemas ao processar a task; verifique o status manualmente (show-task)", command, c.callTimeout)
+		return api.APIResponse{}, fmt.Errorf("command %q did not respond within %s — the server may be having trouble processing the task; check the status manually (show-task)", command, c.callTimeout)
 	}
 }
 

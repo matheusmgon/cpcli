@@ -15,7 +15,7 @@ import (
 func newGatewayCmd() *cobra.Command {
 	root := &cobra.Command{
 		Use:   "gateway",
-		Short: "Gateways e servidores (listar todos; CRUD de simple-gateway)",
+		Short: "Gateways and servers (list all; CRUD for simple-gateway)",
 	}
 	root.AddCommand(
 		newGatewayListCmd(),
@@ -38,7 +38,7 @@ func newGatewayCmd() *cobra.Command {
 func newGatewayInterfaceCmd() *cobra.Command {
 	root := &cobra.Command{
 		Use:   "interface",
-		Short: "Interfaces de um gateway standalone (topologia, anti-spoofing)",
+		Short: "Interfaces of a standalone gateway (topology, anti-spoofing)",
 	}
 	root.AddCommand(
 		newGatewayInterfaceListCmd(),
@@ -51,10 +51,10 @@ func newGatewayInterfaceListCmd() *cobra.Command {
 	var gateway string
 	cmd := &cobra.Command{
 		Use:   "list",
-		Short: "Lista as interfaces de um gateway (IP, anti-spoofing, topologia)",
+		Short: "List a gateway's interfaces (IP, anti-spoofing, topology)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if gateway == "" {
-				return fmt.Errorf("--gateway é obrigatório")
+				return fmt.Errorf("--gateway is required")
 			}
 			ifaces, err := fetchGatewayInterfaces(gateway)
 			if err != nil {
@@ -63,7 +63,7 @@ func newGatewayInterfaceListCmd() *cobra.Command {
 			return printJSON(ifaces)
 		},
 	}
-	cmd.Flags().StringVar(&gateway, "gateway", "", "Nome do gateway (obrigatório)")
+	cmd.Flags().StringVar(&gateway, "gateway", "", "Gateway name (required)")
 	return cmd
 }
 
@@ -72,10 +72,10 @@ func newGatewayInterfaceSetCmd() *cobra.Command {
 	var fields []string
 	cmd := &cobra.Command{
 		Use:   "set",
-		Short: "Altera uma interface do gateway (ex: --field anti-spoofing=true)",
+		Short: "Update a gateway interface (e.g. --field anti-spoofing=true)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if gateway == "" || iface == "" {
-				return fmt.Errorf("--gateway e --interface são obrigatórios")
+				return fmt.Errorf("--gateway and --interface are required")
 			}
 			extra, err := parseFields(fields)
 			if err != nil {
@@ -87,7 +87,7 @@ func newGatewayInterfaceSetCmd() *cobra.Command {
 			}
 			updated, found := mgmt.MergeGatewayInterface(ifaces, iface, extra)
 			if !found {
-				return fmt.Errorf("interface %q não encontrada no gateway %q", iface, gateway)
+				return fmt.Errorf("interface %q not found on gateway %q", iface, gateway)
 			}
 			return callAndPrint("set-simple-gateway", map[string]interface{}{
 				"name":       gateway,
@@ -95,9 +95,9 @@ func newGatewayInterfaceSetCmd() *cobra.Command {
 			}, true, true)
 		},
 	}
-	cmd.Flags().StringVar(&gateway, "gateway", "", "Nome do gateway (obrigatório)")
-	cmd.Flags().StringVar(&iface, "interface", "", `Nome da interface, ex: "eth0" (obrigatório)`)
-	cmd.Flags().StringArrayVar(&fields, "field", nil, `Campo chave=valor (ex: --field anti-spoofing=true --field topology='"external"')`)
+	cmd.Flags().StringVar(&gateway, "gateway", "", "Gateway name (required)")
+	cmd.Flags().StringVar(&iface, "interface", "", `Interface name, e.g. "eth0" (required)`)
+	cmd.Flags().StringArrayVar(&fields, "field", nil, `key=value field (e.g. --field anti-spoofing=true --field topology='"external"')`)
 	return cmd
 }
 
@@ -124,7 +124,7 @@ func newGatewayListCmd() *cobra.Command {
 	var filter, detailsLevel string
 	cmd := &cobra.Command{
 		Use:   "list",
-		Short: "Lista todos os gateways e servidores gerenciados",
+		Short: "List all managed gateways and servers",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			payload := map[string]interface{}{}
 			if filter != "" {
@@ -133,8 +133,8 @@ func newGatewayListCmd() *cobra.Command {
 			return listAndPrint("show-gateways-and-servers", detailsLevel, "objects", payload)
 		},
 	}
-	cmd.Flags().StringVar(&filter, "filter", "", "Texto de busca (filtro do Check Point)")
-	cmd.Flags().StringVar(&detailsLevel, "details-level", "standard", "Nível de detalhe: uid | standard | full")
+	cmd.Flags().StringVar(&filter, "filter", "", "Search text (Check Point filter)")
+	cmd.Flags().StringVar(&detailsLevel, "details-level", "standard", "Detail level: uid | standard | full")
 	return cmd
 }
 
@@ -142,7 +142,7 @@ func newGatewayShowCmd() *cobra.Command {
 	var name, uid string
 	cmd := &cobra.Command{
 		Use:   "show",
-		Short: "Mostra um gateway standalone (simple-gateway)",
+		Short: "Show a standalone gateway (simple-gateway)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			payload, err := nameOrUIDPayload(name, uid)
 			if err != nil {
@@ -152,8 +152,8 @@ func newGatewayShowCmd() *cobra.Command {
 			return callAndPrint("show-simple-gateway", payload, false, false)
 		},
 	}
-	cmd.Flags().StringVar(&name, "name", "", "Nome do gateway")
-	cmd.Flags().StringVar(&uid, "uid", "", "UID do gateway")
+	cmd.Flags().StringVar(&name, "name", "", "Gateway name")
+	cmd.Flags().StringVar(&uid, "uid", "", "Gateway UID")
 	return cmd
 }
 
@@ -162,10 +162,10 @@ func newGatewayAddCmd() *cobra.Command {
 	var fields []string
 	cmd := &cobra.Command{
 		Use:   "add",
-		Short: "Cria um gateway standalone (blades comuns: --field firewall=true, --field vpn=true)",
+		Short: "Create a standalone gateway (common blades: --field firewall=true, --field vpn=true)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if name == "" {
-				return fmt.Errorf("--name é obrigatório")
+				return fmt.Errorf("--name is required")
 			}
 			payload, err := parseFields(fields)
 			if err != nil {
@@ -178,9 +178,9 @@ func newGatewayAddCmd() *cobra.Command {
 			return callAndPrint("add-simple-gateway", payload, true, true)
 		},
 	}
-	cmd.Flags().StringVar(&name, "name", "", "Nome do gateway (obrigatório)")
-	cmd.Flags().StringVar(&ip, "ip", "", "Endereço IP do gateway")
-	cmd.Flags().StringArrayVar(&fields, "field", nil, "Campo chave=valor (repetível). Ex: --field firewall=true --field application-control=true")
+	cmd.Flags().StringVar(&name, "name", "", "Gateway name (required)")
+	cmd.Flags().StringVar(&ip, "ip", "", "Gateway IP address")
+	cmd.Flags().StringArrayVar(&fields, "field", nil, "key=value field (repeatable). e.g. --field firewall=true --field application-control=true")
 	return cmd
 }
 
@@ -189,7 +189,7 @@ func newGatewaySetCmd() *cobra.Command {
 	var fields []string
 	cmd := &cobra.Command{
 		Use:   "set",
-		Short: "Altera um gateway standalone existente",
+		Short: "Update an existing standalone gateway",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			payload, err := nameOrUIDPayload(name, uid)
 			if err != nil {
@@ -205,9 +205,9 @@ func newGatewaySetCmd() *cobra.Command {
 			return callAndPrint("set-simple-gateway", payload, true, true)
 		},
 	}
-	cmd.Flags().StringVar(&name, "name", "", "Nome do gateway")
-	cmd.Flags().StringVar(&uid, "uid", "", "UID do gateway")
-	cmd.Flags().StringArrayVar(&fields, "field", nil, "Campo chave=valor a alterar (repetível)")
+	cmd.Flags().StringVar(&name, "name", "", "Gateway name")
+	cmd.Flags().StringVar(&uid, "uid", "", "Gateway UID")
+	cmd.Flags().StringArrayVar(&fields, "field", nil, "key=value field to modify (repeatable)")
 	return cmd
 }
 
@@ -215,7 +215,7 @@ func newGatewayDeleteCmd() *cobra.Command {
 	var name, uid string
 	cmd := &cobra.Command{
 		Use:   "delete",
-		Short: "Apaga um gateway standalone",
+		Short: "Delete a standalone gateway",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			payload, err := nameOrUIDPayload(name, uid)
 			if err != nil {
@@ -224,7 +224,7 @@ func newGatewayDeleteCmd() *cobra.Command {
 			return callAndPrint("delete-simple-gateway", payload, true, true)
 		},
 	}
-	cmd.Flags().StringVar(&name, "name", "", "Nome do gateway")
-	cmd.Flags().StringVar(&uid, "uid", "", "UID do gateway")
+	cmd.Flags().StringVar(&name, "name", "", "Gateway name")
+	cmd.Flags().StringVar(&uid, "uid", "", "Gateway UID")
 	return cmd
 }

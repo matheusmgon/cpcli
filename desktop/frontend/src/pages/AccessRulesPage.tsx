@@ -144,43 +144,43 @@ export function AccessRulesPage() {
   const addMutation = useMutation({
     mutationFn: (fields: JsonRecord) => getService().addAccessRule(layerName, fields),
     onSuccess: () => {
-      toast.success("Regra criada");
+      toast.success("Rule created");
       invalidateRulebase();
       useSessionStore.getState().markPending(1);
     },
-    onError: (error) => toast.error(`Falha ao criar regra: ${getErrorMessage(error)}`),
+    onError: (error) => toast.error(`Failed to create rule: ${getErrorMessage(error)}`),
   });
 
   const editMutation = useMutation({
     mutationFn: ({ uid, fields }: { uid: string; fields: JsonRecord }) =>
       getService().setAccessRule(layerName, uid, fields),
     onSuccess: () => {
-      toast.success("Regra atualizada");
+      toast.success("Rule updated");
       invalidateRulebase();
       useSessionStore.getState().markPending(1);
     },
-    onError: (error) => toast.error(`Falha ao atualizar regra: ${getErrorMessage(error)}`),
+    onError: (error) => toast.error(`Failed to update rule: ${getErrorMessage(error)}`),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (uid: string) => getService().deleteAccessRule(layerName, uid),
     onSuccess: () => {
-      toast.success("Regra removida");
+      toast.success("Rule removed");
       invalidateRulebase();
       useSessionStore.getState().markPending(1);
     },
-    onError: (error) => toast.error(`Falha ao remover regra: ${getErrorMessage(error)}`),
+    onError: (error) => toast.error(`Failed to remove rule: ${getErrorMessage(error)}`),
   });
 
   const toggleEnabledMutation = useMutation({
     mutationFn: ({ uid, enabled }: { uid: string; enabled: boolean }) =>
       getService().setAccessRule(layerName, uid, { enabled }),
     onSuccess: (_data, { enabled }) => {
-      toast.success(enabled ? "Regra ativada" : "Regra desativada");
+      toast.success(enabled ? "Rule enabled" : "Rule disabled");
       invalidateRulebase();
       useSessionStore.getState().markPending(1);
     },
-    onError: (error) => toast.error(`Falha ao alterar regra: ${getErrorMessage(error)}`),
+    onError: (error) => toast.error(`Failed to change rule: ${getErrorMessage(error)}`),
   });
 
   function openCreateDialog() {
@@ -210,7 +210,7 @@ export function AccessRulesPage() {
   }
 
   function handleDelete(uid: string) {
-    if (!window.confirm("Remover esta regra?")) return;
+    if (!window.confirm("Remove this rule?")) return;
     deleteMutation.mutate(uid);
   }
 
@@ -257,11 +257,11 @@ export function AccessRulesPage() {
     <div>
       <PageHeader
         title="Access Control"
-        subtitle="Regras de uma camada (layer)."
+        subtitle="Rules for a single layer."
         actions={
           <Button onClick={openCreateDialog} disabled={!layerName}>
             <Plus className="size-4" />
-            Nova regra
+            New rule
           </Button>
         }
       />
@@ -272,7 +272,7 @@ export function AccessRulesPage() {
         </Label>
         <Select value={layerName} onValueChange={setLayerName}>
           <SelectTrigger id="layer-select">
-            <SelectValue placeholder="Selecione uma layer" />
+            <SelectValue placeholder="Select a layer" />
           </SelectTrigger>
           <SelectContent>
             {layers.map((layer) => {
@@ -289,11 +289,11 @@ export function AccessRulesPage() {
 
       <RulebaseTable
         rows={rows}
-        emptyMessage={layerName ? "Esta layer ainda não tem regras." : "Selecione uma layer para ver as regras."}
+        emptyMessage={layerName ? "This layer has no rules yet." : "Select a layer to see its rules."}
         columns={[
           { header: "#", cell: (row) => (typeof row["rule-number"] === "number" ? String(row["rule-number"]) : "") },
           {
-            header: "Ativa",
+            header: "Enabled",
             cell: (row) => {
               const uid = String(row.uid ?? "");
               const enabled = row.enabled !== false;
@@ -304,16 +304,16 @@ export function AccessRulesPage() {
                   disabled={!uid || toggleEnabledMutation.isPending}
                   onChange={() => toggleEnabledMutation.mutate({ uid, enabled: !enabled })}
                   className="size-4 rounded border-border accent-accent"
-                  aria-label={enabled ? "Desativar regra" : "Ativar regra"}
+                  aria-label={enabled ? "Disable rule" : "Enable rule"}
                 />
               );
             },
           },
-          { header: "Nome", cell: (row) => (typeof row.name === "string" ? row.name : "") },
-          { header: "Ação", cell: (row) => refName(row.action) },
-          { header: "Origem", cell: (row) => refName(row.source) },
-          { header: "Destino", cell: (row) => refName(row.destination) },
-          { header: "Serviço", cell: (row) => refName(row.service) },
+          { header: "Name", cell: (row) => (typeof row.name === "string" ? row.name : "") },
+          { header: "Action", cell: (row) => refName(row.action) },
+          { header: "Source", cell: (row) => refName(row.source) },
+          { header: "Destination", cell: (row) => refName(row.destination) },
+          { header: "Service", cell: (row) => refName(row.service) },
           {
             header: "Track",
             cell: (row) => {
@@ -329,10 +329,10 @@ export function AccessRulesPage() {
           const uid = String(row.uid ?? "");
           return (
             <div className="flex justify-end gap-1">
-              <Button variant="ghost" size="icon" onClick={() => openEditDialog(row)} aria-label="Editar regra">
+              <Button variant="ghost" size="icon" onClick={() => openEditDialog(row)} aria-label="Edit rule">
                 <Pencil className="size-4" />
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => handleDelete(uid)} aria-label="Remover regra">
+              <Button variant="ghost" size="icon" onClick={() => handleDelete(uid)} aria-label="Remove rule">
                 <Trash2 className="size-4" />
               </Button>
             </div>
@@ -343,27 +343,27 @@ export function AccessRulesPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen} modal={false}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingUid ? "Editar regra" : "Nova regra"}</DialogTitle>
+            <DialogTitle>{editingUid ? "Edit rule" : "New rule"}</DialogTitle>
             <DialogDescription>
               {editingUid
-                ? "Campos de origem/destino/serviço vazios não são alterados."
-                : "Campos de origem/destino/serviço vazios equivalem a “Any”."}
+                ? "Empty source/destination/service fields are not changed."
+                : "Empty source/destination/service fields are equivalent to “Any”."}
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="rule-name">Nome</Label>
+              <Label htmlFor="rule-name">Name</Label>
               <Input
                 id="rule-name"
                 value={form.name}
                 onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-                placeholder="(opcional)"
+                placeholder="(optional)"
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="rule-action">Ação</Label>
+              <Label htmlFor="rule-action">Action</Label>
               <Select
                 value={form.action}
                 onValueChange={(value) => setForm((prev) => ({ ...prev, action: value as ActionOption }))}
@@ -409,11 +409,11 @@ export function AccessRulesPage() {
                   onChange={(e) => setForm((prev) => ({ ...prev, enabled: e.target.checked }))}
                   className="size-4 rounded border-border accent-accent"
                 />
-                <Label htmlFor="rule-enabled">Habilitada</Label>
+                <Label htmlFor="rule-enabled">Enabled</Label>
               </div>
             ) : (
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="rule-position">Posição</Label>
+                <Label htmlFor="rule-position">Position</Label>
                 <Select
                   value={form.position}
                   onValueChange={(value) => setForm((prev) => ({ ...prev, position: value as "top" | "bottom" }))}
@@ -430,31 +430,31 @@ export function AccessRulesPage() {
             )}
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="rule-source">Origem</Label>
+              <Label htmlFor="rule-source">Source</Label>
               <ObjectPicker
                 value={form.source}
                 onChange={(names) => setForm((prev) => ({ ...prev, source: names }))}
-                placeholder="Buscar objetos... (vazio = Any)"
+                placeholder="Search objects... (empty = Any)"
                 categories={["network"]}
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="rule-destination">Destino</Label>
+              <Label htmlFor="rule-destination">Destination</Label>
               <ObjectPicker
                 value={form.destination}
                 onChange={(names) => setForm((prev) => ({ ...prev, destination: names }))}
-                placeholder="Buscar objetos... (vazio = Any)"
+                placeholder="Search objects... (empty = Any)"
                 categories={["network"]}
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="rule-service">Serviço</Label>
+              <Label htmlFor="rule-service">Service</Label>
               <ObjectPicker
                 value={form.service}
                 onChange={(names) => setForm((prev) => ({ ...prev, service: names }))}
-                placeholder="Buscar objetos... (vazio = Any)"
+                placeholder="Search objects... (empty = Any)"
                 categories={["service"]}
               />
             </div>
@@ -462,10 +462,10 @@ export function AccessRulesPage() {
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-              Cancelar
+              Cancel
             </Button>
             <Button type="button" onClick={handleSubmit} disabled={isSaving}>
-              Salvar
+              Save
             </Button>
           </DialogFooter>
         </DialogContent>

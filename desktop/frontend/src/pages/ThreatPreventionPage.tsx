@@ -128,43 +128,43 @@ function ThreatRulesTab() {
   const addMutation = useMutation({
     mutationFn: (fields: JsonRecord) => getService().addThreatRule(layerName, fields),
     onSuccess: () => {
-      toast.success("Regra criada");
+      toast.success("Rule created");
       invalidateRulebase();
       useSessionStore.getState().markPending(1);
     },
-    onError: (error) => toast.error(`Falha ao criar regra: ${getErrorMessage(error)}`),
+    onError: (error) => toast.error(`Failed to create rule: ${getErrorMessage(error)}`),
   });
 
   const editMutation = useMutation({
     mutationFn: ({ uid, fields }: { uid: string; fields: JsonRecord }) =>
       getService().setThreatRule(layerName, uid, fields),
     onSuccess: () => {
-      toast.success("Regra atualizada");
+      toast.success("Rule updated");
       invalidateRulebase();
       useSessionStore.getState().markPending(1);
     },
-    onError: (error) => toast.error(`Falha ao atualizar regra: ${getErrorMessage(error)}`),
+    onError: (error) => toast.error(`Failed to update rule: ${getErrorMessage(error)}`),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (uid: string) => getService().deleteThreatRule(layerName, uid),
     onSuccess: () => {
-      toast.success("Regra removida");
+      toast.success("Rule removed");
       invalidateRulebase();
       useSessionStore.getState().markPending(1);
     },
-    onError: (error) => toast.error(`Falha ao remover regra: ${getErrorMessage(error)}`),
+    onError: (error) => toast.error(`Failed to remove rule: ${getErrorMessage(error)}`),
   });
 
   const toggleEnabledMutation = useMutation({
     mutationFn: ({ uid, enabled }: { uid: string; enabled: boolean }) =>
       getService().setThreatRule(layerName, uid, { enabled }),
     onSuccess: (_data, { enabled }) => {
-      toast.success(enabled ? "Regra ativada" : "Regra desativada");
+      toast.success(enabled ? "Rule enabled" : "Rule disabled");
       invalidateRulebase();
       useSessionStore.getState().markPending(1);
     },
-    onError: (error) => toast.error(`Falha ao alterar regra: ${getErrorMessage(error)}`),
+    onError: (error) => toast.error(`Failed to change rule: ${getErrorMessage(error)}`),
   });
 
   function openCreateDialog() {
@@ -185,7 +185,7 @@ function ThreatRulesTab() {
   }
 
   function handleDelete(uid: string) {
-    if (!window.confirm("Remover esta regra?")) return;
+    if (!window.confirm("Remove this rule?")) return;
     deleteMutation.mutate(uid);
   }
 
@@ -207,7 +207,7 @@ function ThreatRulesTab() {
     }
 
     if (!form.name.trim()) {
-      toast.error("Nome é obrigatório para regras de Threat Prevention");
+      toast.error("Name is required for Threat Prevention rules");
       return;
     }
 
@@ -231,7 +231,7 @@ function ThreatRulesTab() {
           </Label>
           <Select value={layerName} onValueChange={setLayerName}>
             <SelectTrigger id="threat-layer-select">
-              <SelectValue placeholder="Selecione uma layer" />
+              <SelectValue placeholder="Select a layer" />
             </SelectTrigger>
             <SelectContent>
               {layers.map((layer) => {
@@ -247,17 +247,17 @@ function ThreatRulesTab() {
         </div>
         <Button onClick={openCreateDialog} disabled={!layerName}>
           <Plus className="size-4" />
-          Nova regra
+          New rule
         </Button>
       </div>
 
       <RulebaseTable
         rows={rows}
-        emptyMessage={layerName ? "Esta layer ainda não tem regras." : "Selecione uma layer para ver as regras."}
+        emptyMessage={layerName ? "This layer has no rules yet." : "Select a layer to see its rules."}
         columns={[
           { header: "#", cell: (row) => (typeof row["rule-number"] === "number" ? String(row["rule-number"]) : "") },
           {
-            header: "Ativa",
+            header: "Enabled",
             cell: (row) => {
               const uid = String(row.uid ?? "");
               const enabled = row.enabled !== false;
@@ -268,23 +268,23 @@ function ThreatRulesTab() {
                   disabled={!uid || toggleEnabledMutation.isPending}
                   onChange={() => toggleEnabledMutation.mutate({ uid, enabled: !enabled })}
                   className="size-4 rounded border-border accent-accent"
-                  aria-label={enabled ? "Desativar regra" : "Ativar regra"}
+                  aria-label={enabled ? "Disable rule" : "Enable rule"}
                 />
               );
             },
           },
-          { header: "Nome", cell: (row) => (typeof row.name === "string" ? row.name : "") },
-          { header: "Ação", cell: (row) => refName(row.action) },
-          { header: "Escopo protegido", cell: (row) => refName(row["protected-scope"]) },
+          { header: "Name", cell: (row) => (typeof row.name === "string" ? row.name : "") },
+          { header: "Action", cell: (row) => refName(row.action) },
+          { header: "Protected scope", cell: (row) => refName(row["protected-scope"]) },
         ]}
         renderActions={(row) => {
           const uid = String(row.uid ?? "");
           return (
             <div className="flex justify-end gap-1">
-              <Button variant="ghost" size="icon" onClick={() => openEditDialog(row)} aria-label="Editar regra">
+              <Button variant="ghost" size="icon" onClick={() => openEditDialog(row)} aria-label="Edit rule">
                 <Pencil className="size-4" />
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => handleDelete(uid)} aria-label="Remover regra">
+              <Button variant="ghost" size="icon" onClick={() => handleDelete(uid)} aria-label="Remove rule">
                 <Trash2 className="size-4" />
               </Button>
             </div>
@@ -295,22 +295,22 @@ function ThreatRulesTab() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen} modal={false}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingUid ? "Editar regra" : "Nova regra"}</DialogTitle>
+            <DialogTitle>{editingUid ? "Edit rule" : "New rule"}</DialogTitle>
             <DialogDescription>
               {editingUid
-                ? "O escopo protegido vazio não é alterado."
-                : "Nome é obrigatório. Escopo protegido vazio equivale a “Any”."}
+                ? "An empty protected scope is not changed."
+                : "Name is required. An empty protected scope is equivalent to “Any”."}
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="threat-rule-name">Nome</Label>
+              <Label htmlFor="threat-rule-name">Name</Label>
               <Input
                 id="threat-rule-name"
                 value={form.name}
                 onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-                placeholder={editingUid ? "(opcional)" : "nome da regra (obrigatório)"}
+                placeholder={editingUid ? "(optional)" : "rule name (required)"}
               />
             </div>
 
@@ -323,11 +323,11 @@ function ThreatRulesTab() {
                   onChange={(e) => setForm((prev) => ({ ...prev, enabled: e.target.checked }))}
                   className="size-4 rounded border-border accent-accent"
                 />
-                <Label htmlFor="threat-rule-enabled">Habilitada</Label>
+                <Label htmlFor="threat-rule-enabled">Enabled</Label>
               </div>
             ) : (
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="threat-rule-position">Posição</Label>
+                <Label htmlFor="threat-rule-position">Position</Label>
                 <Select
                   value={form.position}
                   onValueChange={(value) => setForm((prev) => ({ ...prev, position: value as "top" | "bottom" }))}
@@ -344,11 +344,11 @@ function ThreatRulesTab() {
             )}
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="threat-rule-scope">Escopo protegido</Label>
+              <Label htmlFor="threat-rule-scope">Protected scope</Label>
               <ObjectPicker
                 value={form.protectedScope}
                 onChange={(names) => setForm((prev) => ({ ...prev, protectedScope: names }))}
-                placeholder="Buscar objetos... (vazio = Any)"
+                placeholder="Search objects... (empty = Any)"
                 categories={["network"]}
               />
             </div>
@@ -356,10 +356,10 @@ function ThreatRulesTab() {
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-              Cancelar
+              Cancel
             </Button>
             <Button type="button" onClick={handleSubmit} disabled={isSaving}>
-              Salvar
+              Save
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -390,26 +390,26 @@ function ThreatProfilesTab() {
     mutationFn: (fields: JsonRecord) => getService().addThreatProfile(fields),
     onSuccess: () => {
       onMutationSettled();
-      toast.success("Profile criado.");
+      toast.success("Profile created.");
     },
-    onError: (error) => toast.error(`Falha ao criar profile: ${getErrorMessage(error)}`),
+    onError: (error) => toast.error(`Failed to create profile: ${getErrorMessage(error)}`),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (name: string) => getService().deleteThreatProfile(name),
     onSuccess: () => {
       onMutationSettled();
-      toast.success("Profile removido.");
+      toast.success("Profile removed.");
     },
-    onError: (error) => toast.error(`Falha ao remover profile: ${getErrorMessage(error)}`),
+    onError: (error) => toast.error(`Failed to remove profile: ${getErrorMessage(error)}`),
   });
 
   const columns = useMemo<ColumnDef<JsonRecord>[]>(
     () => [
-      { accessorKey: "name", header: "Nome" },
+      { accessorKey: "name", header: "Name" },
       {
         id: "actions",
-        header: "Ações",
+        header: "Actions",
         cell: ({ row }) => {
           const name = typeof row.original.name === "string" ? row.original.name : "";
           return (
@@ -419,12 +419,12 @@ function ThreatProfilesTab() {
                 size="sm"
                 className="text-danger hover:text-danger"
                 onClick={() => {
-                  if (window.confirm(`Apagar profile "${name}"? Esta ação fica pendente até o Publish.`)) {
+                  if (window.confirm(`Delete profile "${name}"? This change stays pending until Publish.`)) {
                     deleteMutation.mutate(name);
                   }
                 }}
               >
-                Apagar
+                Delete
               </Button>
             </div>
           );
@@ -440,23 +440,23 @@ function ThreatProfilesTab() {
       <div className="mb-4 flex justify-end">
         <Button onClick={() => setCreateOpen(true)}>
           <Plus className="size-4" />
-          Novo profile
+          New profile
         </Button>
       </div>
 
       <DataTable
         columns={columns}
         data={data ?? []}
-        searchPlaceholder="Buscar profile..."
-        emptyTitle={isLoading ? "Carregando..." : "Nenhum profile encontrado"}
-        emptyDescription={isLoading ? undefined : "Use o botão Novo profile para criar o primeiro registro."}
+        searchPlaceholder="Search profile..."
+        emptyTitle={isLoading ? "Loading..." : "No profiles found"}
+        emptyDescription={isLoading ? undefined : "Use the New profile button to create the first record."}
       />
 
       <EntityFormDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        title="Novo profile"
-        fields={[{ key: "name", label: "Nome", placeholder: "nome do profile" }]}
+        title="New profile"
+        fields={[{ key: "name", label: "Name", placeholder: "profile name" }]}
         onSubmit={async (values) => {
           await addMutation.mutateAsync(values);
         }}
@@ -469,14 +469,14 @@ function ThreatProfilesTab() {
 export function ThreatPreventionPage() {
   return (
     <div>
-      <PageHeader title="Threat Prevention" subtitle="Regras e perfis de prevenção de ameaças." />
+      <PageHeader title="Threat Prevention" subtitle="Threat prevention rules and profiles." />
 
-      <Tabs defaultValue="regras">
+      <Tabs defaultValue="rules">
         <TabsList>
-          <TabsTrigger value="regras">Regras</TabsTrigger>
+          <TabsTrigger value="rules">Rules</TabsTrigger>
           <TabsTrigger value="profiles">Profiles</TabsTrigger>
         </TabsList>
-        <TabsContent value="regras">
+        <TabsContent value="rules">
           <ThreatRulesTab />
         </TabsContent>
         <TabsContent value="profiles">

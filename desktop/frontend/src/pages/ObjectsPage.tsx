@@ -47,27 +47,27 @@ export function ObjectsPage() {
     mutationFn: (fields: JsonRecord) => getService().addObject(kind, fields),
     onSuccess: () => {
       onMutationSettled();
-      toast.success("Objeto criado.");
+      toast.success("Object created.");
     },
-    onError: (error: Error) => toast.error(`Falha ao criar objeto: ${error.message}`),
+    onError: (error: Error) => toast.error(`Failed to create object: ${error.message}`),
   });
 
   const editMutation = useMutation({
     mutationFn: (fields: JsonRecord) => getService().setObject(kind, fields),
     onSuccess: () => {
       onMutationSettled();
-      toast.success("Objeto atualizado.");
+      toast.success("Object updated.");
     },
-    onError: (error: Error) => toast.error(`Falha ao atualizar objeto: ${error.message}`),
+    onError: (error: Error) => toast.error(`Failed to update object: ${error.message}`),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (name: string) => getService().deleteObject(kind, name),
     onSuccess: () => {
       onMutationSettled();
-      toast.success("Objeto removido.");
+      toast.success("Object removed.");
     },
-    onError: (error: Error) => toast.error(`Falha ao remover objeto: ${error.message}`),
+    onError: (error: Error) => toast.error(`Failed to remove object: ${error.message}`),
   });
 
   const canEdit = (config?.fields.length ?? 0) > 1;
@@ -83,7 +83,7 @@ export function ObjectsPage() {
 
     const actionsColumn: ColumnDef<JsonRecord> = {
       id: "actions",
-      header: "Ações",
+      header: "Actions",
       cell: ({ row }) => {
         const record = row.original;
         const name = toText(record.name);
@@ -91,7 +91,7 @@ export function ObjectsPage() {
           <div className="flex items-center gap-2">
             {canEdit && (
               <Button variant="outline" size="sm" onClick={() => setEditing(record)}>
-                Editar
+                Edit
               </Button>
             )}
             <Button
@@ -99,12 +99,12 @@ export function ObjectsPage() {
               size="sm"
               className="text-danger hover:text-danger"
               onClick={() => {
-                if (window.confirm(`Apagar "${name}"? Esta ação fica pendente até o Publish.`)) {
+                if (window.confirm(`Delete "${name}"? This change stays pending until Publish.`)) {
                   deleteMutation.mutate(name);
                 }
               }}
             >
-              Apagar
+              Delete
             </Button>
           </div>
         );
@@ -118,7 +118,7 @@ export function ObjectsPage() {
   if (!config) {
     return (
       <div>
-        <PageHeader title="Tipo de objeto desconhecido" subtitle={`Objetos: ${kind}`} />
+        <PageHeader title="Unknown object type" subtitle={`Objects: ${kind}`} />
       </div>
     );
   }
@@ -132,10 +132,10 @@ export function ObjectsPage() {
     <div>
       <PageHeader
         title={config.title}
-        subtitle="Alterações ficam pendentes até o Publish."
+        subtitle="Changes stay pending until Publish."
         actions={
           <Button onClick={() => setCreateOpen(true)}>
-            <Plus /> Adicionar
+            <Plus /> Add
           </Button>
         }
       />
@@ -143,17 +143,17 @@ export function ObjectsPage() {
       <DataTable
         columns={columns}
         data={data ?? []}
-        searchPlaceholder={`Buscar em ${config.title.toLowerCase()}...`}
-        emptyTitle={isLoading ? "Carregando..." : `Nenhum item encontrado em ${config.title}`}
+        searchPlaceholder={`Search in ${config.title.toLowerCase()}...`}
+        emptyTitle={isLoading ? "Loading..." : `No items found in ${config.title}`}
         emptyDescription={
-          isLoading ? undefined : "Use o botão Adicionar para criar o primeiro registro."
+          isLoading ? undefined : "Use the Add button to create the first record."
         }
       />
 
       <EntityFormDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        title={`Adicionar — ${config.title}`}
+        title={`Add — ${config.title}`}
         fields={config.fields}
         onSubmit={async (values) => {
           await addMutation.mutateAsync(values);
@@ -165,8 +165,8 @@ export function ObjectsPage() {
         onOpenChange={(open) => {
           if (!open) setEditing(null);
         }}
-        title={`Editar — ${toText(editing?.name)}`}
-        description="O nome não pode ser alterado."
+        title={`Edit — ${toText(editing?.name)}`}
+        description="The name cannot be changed."
         fields={editFields}
         initial={editInitial}
         onSubmit={async (values) => {

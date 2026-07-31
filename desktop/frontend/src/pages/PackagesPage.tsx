@@ -9,17 +9,17 @@ import { Button } from "@/components/ui/button";
 import { getService, type JsonRecord } from "@/lib/wailsService";
 
 const columns: ColumnDef<JsonRecord>[] = [
-  { accessorKey: "name", header: "Nome" },
+  { accessorKey: "name", header: "Name" },
   {
     id: "access",
     header: "Access",
-    cell: ({ row }) => (row.original.access ? <Badge variant="success">sim</Badge> : null),
+    cell: ({ row }) => (row.original.access ? <Badge variant="success">yes</Badge> : null),
   },
   {
     id: "threat-prevention",
     header: "Threat Prevention",
     cell: ({ row }) =>
-      row.original["threat-prevention"] ? <Badge variant="success">sim</Badge> : null,
+      row.original["threat-prevention"] ? <Badge variant="success">yes</Badge> : null,
   },
 ];
 
@@ -36,18 +36,18 @@ export function PackagesPage() {
     <div>
       <PageHeader
         title="Policy Packages"
-        subtitle="Somente leitura."
+        subtitle="Read-only."
         actions={
           <Button
             variant="outline"
             onClick={() => queryClient.invalidateQueries({ queryKey: ["packages"] })}
           >
-            <RefreshCw /> Atualizar
+            <RefreshCw /> Refresh
           </Button>
         }
       />
 
-      <DataTable columns={columns} data={data} searchPlaceholder="Buscar pacote..." />
+      <DataTable columns={columns} data={data} searchPlaceholder="Search package..." />
     </div>
   );
 }

@@ -42,14 +42,14 @@ export function InstallPolicyPage() {
 
   const verifyMutation = useMutation({
     mutationFn: () => getService().verifyPolicy(pkg),
-    onSuccess: () => toast.success("Política verificada com sucesso"),
-    onError: (error: unknown) => toast.error(errorMessage(error, "Falha na verificação")),
+    onSuccess: () => toast.success("Policy verified successfully"),
+    onError: (error: unknown) => toast.error(errorMessage(error, "Verification failed")),
   });
 
   const installMutation = useMutation({
     mutationFn: () => getService().installPolicy(pkg, targets),
-    onSuccess: () => toast.success("Instalação de política concluída"),
-    onError: (error: unknown) => toast.error(errorMessage(error, "Falha ao instalar política")),
+    onSuccess: () => toast.success("Policy installation completed"),
+    onError: (error: unknown) => toast.error(errorMessage(error, "Failed to install policy")),
   });
 
   function toggleTarget(name: string) {
@@ -58,7 +58,7 @@ export function InstallPolicyPage() {
 
   function handleVerify() {
     if (!pkg) {
-      toast.warning("Selecione um pacote antes de verificar");
+      toast.warning("Select a package before verifying");
       return;
     }
     verifyMutation.mutate();
@@ -66,11 +66,11 @@ export function InstallPolicyPage() {
 
   function handleInstall() {
     if (!pkg) {
-      toast.warning("Selecione um pacote antes de instalar");
+      toast.warning("Select a package before installing");
       return;
     }
     if (targets.length === 0) {
-      toast.warning("Selecione ao menos um gateway de destino");
+      toast.warning("Select at least one target gateway");
       return;
     }
     installMutation.mutate();
@@ -78,14 +78,14 @@ export function InstallPolicyPage() {
 
   return (
     <div>
-      <PageHeader title="Instalar política" subtitle="Escolha o pacote e os gateways de destino." />
+      <PageHeader title="Install Policy" subtitle="Choose the package and target gateways." />
 
       <div className="flex max-w-lg flex-col gap-6">
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-text">Pacote</label>
+          <label className="text-sm font-medium text-text">Package</label>
           <Select value={pkg} onValueChange={setPkg}>
             <SelectTrigger>
-              <SelectValue placeholder="Selecione um pacote" />
+              <SelectValue placeholder="Select a package" />
             </SelectTrigger>
             <SelectContent>
               {packages.map((p) => (
@@ -98,9 +98,9 @@ export function InstallPolicyPage() {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-text">Gateways de destino</label>
+          <label className="text-sm font-medium text-text">Target gateways</label>
           {gatewayTargets.length === 0 ? (
-            <EmptyState title="Nenhum gateway encontrado" />
+            <EmptyState title="No gateways found" />
           ) : (
             <div className="flex flex-wrap gap-2">
               {gatewayTargets.map((g) => {
@@ -126,10 +126,10 @@ export function InstallPolicyPage() {
 
         <div className="flex gap-2">
           <Button variant="outline" disabled={verifyMutation.isPending} onClick={handleVerify}>
-            {verifyMutation.isPending ? "Verificando…" : "Verificar"}
+            {verifyMutation.isPending ? "Verifying…" : "Verify"}
           </Button>
           <Button variant="default" disabled={installMutation.isPending} onClick={handleInstall}>
-            {installMutation.isPending ? "Instalando…" : "Instalar política"}
+            {installMutation.isPending ? "Installing…" : "Install Policy"}
           </Button>
         </div>
       </div>

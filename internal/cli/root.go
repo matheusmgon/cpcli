@@ -19,13 +19,13 @@ func activeProfile() string {
 func Execute() error {
 	root := &cobra.Command{
 		Use:   "cpcli",
-		Short: "Cliente de linha de comando para o Check Point Management API",
-		// main.go prints every returned error itself ("erro: ..."), so
+		Short: "Command-line client for the Check Point Management API",
+		// main.go prints every returned error itself ("error: ..."), so
 		// Cobra's own error printing is silenced to avoid showing it twice.
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
-	root.PersistentFlags().StringVar(&profileFlag, "profile", "default", "Perfil de sessão/servidor (permite gerenciar mais de um Management Server)")
+	root.PersistentFlags().StringVar(&profileFlag, "profile", "default", "Session/server profile (lets you manage more than one Management Server)")
 
 	root.AddCommand(
 		newLoginCmd(),
